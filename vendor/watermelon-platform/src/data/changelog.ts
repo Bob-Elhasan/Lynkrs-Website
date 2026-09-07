@@ -1,0 +1,708 @@
+export interface ChangelogEntry {
+  version: string;
+  date: string;
+  title?: string;
+  stats?: {
+    label: string;
+    count: number;
+    href: string;
+  }[];
+  sections: {
+    title: string;
+    items: {
+      text: string;
+      author?: {
+        name: string;
+        username?: string;
+        link?: string;
+      };
+      tags?: string[];
+    }[];
+  }[];
+}
+
+export const changelogData: ChangelogEntry[] = [
+  {
+    version: '2.3.0',
+    date: 'August 30, 2026',
+    stats: [
+      {
+        label: 'Animated components',
+        count: 131,
+        href: '/animated-components',
+      },
+      {
+        label: 'Blocks',
+        count: 189,
+        href: '/blocks',
+      },
+      {
+        label: 'Dashboards',
+        count: 11,
+        href: '/dashboards',
+      },
+      {
+        label: 'Showcases',
+        count: 2,
+        href: '/showcases',
+      },
+    ],
+    sections: [
+      {
+        title: 'Showcases And Contribution Flow',
+        items: [
+          {
+            text: 'Added a dedicated showcase system so curated page compositions can be contributed through source-backed MDX files and reviewed cleanly through pull requests.',
+            tags: ['showcases', 'contributing', 'mdx'],
+          },
+          {
+            text: 'Expanded README and contribution guidance so community contributors can understand the platform structure, sponsorship paths, and developer entry points faster.',
+            tags: ['docs', 'community', 'sponsors'],
+          },
+        ],
+      },
+      {
+        title: 'AI And Developer Surfaces',
+        items: [
+          {
+            text: 'Added stronger AI discovery surfaces including `llms.txt`, a richer OpenAPI spec, public API docs, trust pages, and improved sitemap coverage.',
+            tags: ['ai', 'openapi', 'sitemap', 'developers'],
+          },
+          {
+            text: 'Shipped structured catalog APIs and machine-readable JSON error responses so agents can inspect Watermelon content without scraping the interface.',
+            tags: ['api', 'json', 'catalog'],
+          },
+          {
+            text: 'Added Watermelon MCP support for local workflows and a Cloudflare Worker deployment path for hosted MCP.',
+            tags: ['mcp', 'cloudflare', 'workers'],
+          },
+        ],
+      },
+      {
+        title: 'Platform Reliability',
+        items: [
+          {
+            text: 'Hardened dependencies and improved the public site response layer so known routes return better agent-readable content and unknown routes can return a real 404.',
+            tags: ['security', 'dependencies', '404'],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    version: '2.2.0',
+    date: 'August 20, 2026',
+    stats: [
+      {
+        label: 'Dashboards shipped in August',
+        count: 5,
+        href: '/dashboards',
+      },
+      {
+        label: 'Shared component cleanup',
+        count: 1,
+        href: '/components',
+      },
+    ],
+    sections: [
+      {
+        title: 'New Dashboards',
+        items: [
+          {
+            text: 'Added Agndex, Astrix, Tallie, Bionis, and Medesk to the dashboard collection during the August release cycle.',
+            tags: ['dashboards', 'agndex', 'astrix', 'tallie', 'bionis', 'medesk'],
+          },
+        ],
+      },
+      {
+        title: 'Polish And Cleanup',
+        items: [
+          {
+            text: 'Improved copy interactions, small UI details, and general integration quality as the new dashboard set was finalized.',
+            tags: ['polish', 'copy-button', 'cleanup'],
+          },
+          {
+            text: 'Approved and integrated shared components used across the newer dashboard experiences.',
+            tags: ['shared-components', 'dashboards'],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    version: '2.1.2',
+    date: 'July 29, 2026',
+    stats: [
+      {
+        label: 'Dashboards added in late July',
+        count: 5,
+        href: '/dashboards',
+      },
+      {
+        label: 'CDN migration',
+        count: 1,
+        href: '/home',
+      },
+    ],
+    sections: [
+      {
+        title: 'Dashboard Expansion',
+        items: [
+          {
+            text: 'Added Supademo, DemoStack, Librar, Jobtracker, and Gridline as new dashboard experiences across the July shipping cycle.',
+            tags: ['dashboards', 'supademo', 'demostack', 'librar', 'jobtracker', 'gridline'],
+          },
+        ],
+      },
+      {
+        title: 'Sharing And Delivery',
+        items: [
+          {
+            text: 'Added Open Graph image generation for richer social previews and link sharing.',
+            tags: ['og-image', 'sharing'],
+          },
+          {
+            text: 'Moved static media assets to the CDN to improve asset delivery and simplify platform serving.',
+            tags: ['cdn', 'assets'],
+          },
+        ],
+      },
+      {
+        title: 'Fixes',
+        items: [
+          {
+            text: 'Polished integration details across DemoStack, Librar, Jobtracker, and Gridline, including theme behavior, tooltips, shadows, responsive layout fixes, and mobile sidebar interactions.',
+            tags: ['fixes', 'themes', 'responsive', 'sidebar'],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    version: '2.1.1',
+    date: 'June 30, 2026',
+    stats: [
+      {
+        label: 'Total animated components',
+        count: 134,
+        href: '/components',
+      },
+      {
+        label: 'Total Templates',
+        count: 1,
+        href: '/templates',
+      },
+      {
+        label: 'Total Blocks',
+        count: 204,
+        href: '/blocks',
+      },
+    ],
+    sections: [
+      {
+        title: 'Animated Components',
+        items: [
+          {
+            text: 'Added 10 premium animated components featuring polished micro-interactions, smooth transitions, shared layout animations, and production-ready APIs.',
+          },
+        ],
+      },
+      {
+        title: 'Animated Widgets',
+        items: [
+          {
+            text: 'Introduced 6 interactive animated widgets designed for dashboards and landing pages, including highly customizable motion and responsive behavior.',
+          },
+        ],
+      },
+      {
+        title: 'New Landing Page Template',
+        items: [
+          {
+            text: 'Released a complete SaaS landing page template with responsive sections, modern animations, pricing, testimonials, FAQs, and conversion-focused layouts.',
+          },
+        ],
+      },
+      {
+        title: 'New Blocks',
+        items: [
+          {
+            text: 'Added 10 new website blocks, including Hero, FAQ, Footer, Features, CTA, Stats, Testimonials, Pricing, Logos, and Contact sections.',
+          },
+        ],
+      },
+      {
+        title: 'Improvements',
+        items: [
+          {
+            text: 'Refined animation performance across the registry with smoother motion, improved timing, and reduced layout shifts.',
+          },
+          {
+            text: 'Enhanced component consistency, responsiveness, accessibility, and overall developer experience throughout the library.',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    version: '2.1.0',
+    date: 'June 26, 2026',
+    stats: [
+      {
+        label: 'Total blocks',
+        count: 194,
+        href: '/blocks',
+      },
+      {
+        label: 'Total dashboards',
+        count: 2,
+        href: '/dashboard',
+      },
+    ],
+    sections: [
+      {
+        title: 'New Blocks',
+        items: [
+          {
+            text: 'Added 10 new Hero sections featuring modern layouts, interactive elements, and conversion-focused designs.',
+          },
+          {
+            text: 'Added 4 new Footer sections with improved navigation, responsive structures, and enhanced content organization.',
+          },
+        ],
+      },
+      {
+        title: 'New Dashboard',
+        items: [
+          {
+            text: 'Added a new Insurance Portfolio Dashboard with policy management, claims monitoring, renewal tracking, portfolio risk analysis, and AI-powered operational insights.',
+          },
+        ],
+      },
+      {
+        title: 'Watermelon UI Landing Launch',
+        items: [
+          {
+            text: 'Released the official Watermelon UI landing page, showcasing the component registry, dashboards, templates, and design system.',
+          },
+        ],
+      },
+      {
+        title: 'Improvements',
+        items: [
+          {
+            text: 'Enhanced component consistency across the registry for a more polished developer experience.',
+          },
+          {
+            text: 'Improved responsiveness and visual refinement throughout blocks, dashboards, and templates.',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    version: '2.0.1',
+    date: 'June 16, 2026',
+    stats: [
+      {
+        label: 'Total blocks',
+        count: 180,
+        href: '/blocks',
+      },
+      {
+        label: 'Total dashboards',
+        count: 1,
+        href: '/dashboard',
+      },
+    ],
+    sections: [
+      {
+        title: 'New Blocks',
+        items: [
+          {
+            text: 'Added 17 new Hero sections to the registry with modern layouts, animations, and conversion-focused designs.',
+          },
+          {
+            text: 'Added 4 new Footer sections featuring enhanced navigation, social links, and responsive layouts.',
+          },
+          {
+            text: 'Added 7 new Authentication sections including Sign In, Sign Up and Split-Screen variants.',
+          },
+          {
+            text: 'Added 1 new CTA section designed to improve engagement and conversion rates.',
+          },
+        ],
+      },
+      {
+        title: 'New Dashboard',
+        items: [
+          {
+            text: 'Added a new Web3 Dashboard with portfolio analytics, lending metrics, APY tracking, market insights, and DeFi management tools.',
+          },
+        ],
+      },
+      {
+        title: 'Dashboard Page Revamp',
+        items: [
+          {
+            text: 'Completely redesigned the Dashboard page with improved layout structure, visual hierarchy, and navigation.',
+          },
+          {
+            text: 'Enhanced responsiveness and overall user experience across desktop and mobile devices.',
+          },
+        ],
+      },
+      {
+        title: 'Bug Fixes',
+        items: [
+          {
+            text: 'Fixed various component rendering issues across the registry.',
+          },
+          {
+            text: 'Resolved styling inconsistencies, spacing problems, and responsive layout edge cases.',
+          },
+          {
+            text: 'Improved component stability and addressed multiple minor UI bugs.',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    version: '2.0.0',
+    date: 'June 4, 2026',
+    stats: [
+      {
+        label: 'Total blocks',
+        count: 152,
+        href: '/blocks',
+      },
+    ],
+    sections: [
+      {
+        title: 'New Blocks',
+        items: [
+          {
+            text: 'Added 123 new blocks to the registry, significantly expanding the library of ready-to-use layouts.',
+          },
+          {
+            text: 'Added 29 premium Hero and Footer sections, providing more high-quality landing page building blocks.',
+          },
+        ],
+      },
+      {
+        title: 'Removed',
+        items: [
+          {
+            text: 'Removed Bento and Dashboard board components from the registry.',
+          },
+        ],
+      },
+      {
+        title: 'UI / UX Fixes',
+        items: [
+          {
+            text: 'Resolved multiple UI inconsistencies and improved visual polish across the platform.',
+          },
+          {
+            text: 'Improved spacing, hierarchy, and interaction patterns on core pages.',
+          },
+        ],
+      },
+      {
+        title: 'Revamp',
+        items: [
+          {
+            text: 'Full platform revamp with refreshed design system, updated layouts, and improved developer experience.',
+          },
+        ],
+      },
+    ],
+  },
+
+  {
+    version: '1.2.7',
+    date: 'Apr 14, 2026',
+    stats: [
+      {
+        label: 'Total Non Animated Variants',
+        count: 350,
+        href: '/components',
+      },
+    ],
+    sections: [
+      {
+        title: 'Shadcn Variants (Non-Animated)',
+        items: [
+          {
+            text: 'Added 180 more non-animated shadcn component variants to significantly expand the component library.',
+          },
+          {
+            text: 'Focused on performance-friendly, static UI patterns for better usability and faster rendering.',
+          },
+          {
+            text: 'Maintained consistent styling and structure across all new variants for seamless integration.',
+          },
+        ],
+      },
+      {
+        title: 'Consistency & Scalability',
+        items: [
+          {
+            text: 'Improved scalability of the design system with a larger set of reusable component variations.',
+          },
+          {
+            text: 'Ensured alignment with existing bento layouts and component ecosystem.',
+          },
+          {
+            text: 'Enhanced developer experience with more ready-to-use UI building blocks.',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    version: '1.2.6',
+    date: 'Apr 03, 2026',
+    stats: [
+      { label: 'New Bento Layouts', count: 17, href: '/blocks' },
+      {
+        label: 'Non-Animated Variants',
+        count: 170,
+        href: '/components/accordion',
+      },
+    ],
+    sections: [
+      {
+        title: 'Bento Layouts',
+        items: [
+          {
+            text: 'Introduced modern bento-style layout components for visually rich and structured UI sections.',
+          },
+          {
+            text: 'Added multiple responsive bento grid variations optimized for dashboards and landing pages.',
+          },
+          {
+            text: 'Added ready-to-use bento layouts designed for clean structure and modern UI presentation.',
+          },
+        ],
+      },
+      {
+        title: 'Shadcn Variants (Non-Animated)',
+        items: [
+          {
+            text: 'Added non-animated variants for shadcn components to improve performance and accessibility.',
+          },
+          {
+            text: 'Provided simplified static variants of components for cleaner and distraction-free interfaces.',
+          },
+          {
+            text: 'Ensured consistent design language across animated and non-animated component sets.',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    version: '1.2.5',
+    date: 'Mar 25, 2026',
+    sections: [
+      {
+        title: 'Custom Theme Support',
+        items: [
+          {
+            text: 'Added support for custom theme CSS variables, allowing users to define their own design system colors.',
+          },
+          {
+            text: 'Introduced a dedicated theme input panel to apply and preview custom styles in real-time.',
+          },
+          {
+            text: 'Enabled seamless integration of user-defined themes with base components for consistent UI rendering.',
+          },
+          {
+            text: 'Improved flexibility for developers to match components with their brand identity using custom variables.',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    version: '1.2.4',
+    date: 'Mar 7, 2026',
+    stats: [
+      { label: 'Total Components', count: 128, href: '/components' },
+      { label: 'Total Dashboards', count: 17, href: '/dashboards' },
+    ],
+    sections: [
+      {
+        title: 'New Version: Improvements and New Dashboards',
+        items: [
+          {
+            text: 'Fixed bugs and errors across existing components to improve stability and usability.',
+          },
+          {
+            text: 'Added 5 new components to the registry with polished previews and copy-ready install commands.',
+          },
+          {
+            text: 'Added 2 new dashboards to the registry with improved functionality and better integration.',
+          },
+          {
+            text: 'Enhanced functionality across all dashboards for a smoother and more consistent experience.',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    version: '1.2.3',
+    date: 'Feb 22, 2026',
+    stats: [
+      { label: 'Total Components', count: 123, href: '/components' },
+      { label: 'New Dashboards', count: 15, href: '/dashboards' },
+      { label: 'New Blocks', count: 5, href: '/blocks' },
+    ],
+    sections: [
+      {
+        title: 'New Version: Added Dashboards and Blocks',
+        items: [
+          {
+            text: 'Added 15 new dashboards to the registry with polished previews and copy-ready install commands.',
+          },
+          {
+            text: 'Added 5 new blocks to the registry with polished previews and copy-ready install commands.',
+          },
+          {
+            text: 'Added 38 new components to the registry with polished previews and copy-ready install commands.',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    version: '1.2.2',
+    date: 'Feb 15, 2026',
+    stats: [{ label: 'Total Components', count: 85, href: '/components' }],
+    sections: [
+      {
+        title: 'Launch',
+        items: [
+          {
+            text: 'Watermelon UI is now live with a comprehensive collection of React components.',
+          },
+          {
+            text: 'launched with 85+ components in the initial release.',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    version: '1.2.1',
+    date: 'Feb 12, 2026',
+    stats: [
+      { label: 'Components Added', count: 24, href: '/components' },
+      { label: 'New Categories', count: 6, href: '/components' },
+    ],
+    sections: [
+      {
+        title: 'Components',
+        items: [
+          {
+            text: 'Added 24 new components to the registry with polished previews and copy-ready install commands.',
+          },
+          {
+            text: 'Published full documentation and usage examples for all new additions.',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    version: '1.2.0',
+    date: 'Feb 11, 2026',
+    sections: [
+      {
+        title: 'Changelog',
+        items: [
+          {
+            text: 'Redesigned Changelog page with a modern vertical timeline visualization.',
+          },
+          {
+            text: 'Integrated Changelog with DocPage components for design consistency.',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    version: '1.1.5',
+    date: 'Feb 10, 2026',
+    sections: [
+      {
+        title: 'UX & SEO',
+        items: [
+          {
+            text: 'Improved SEO with standardized head components and canonical links.',
+          },
+          {
+            text: 'Added mobile preview restrictions for dashboards and blocks to ensure optimal viewing experience.',
+          },
+          {
+            text: 'Configured SPA routing for Cloudflare compatibility to fix direct link 404 errors.',
+          },
+        ],
+      },
+      {
+        title: 'Fixes',
+        items: [
+          {
+            text: 'Fixed SVG namespace errors in logo components.',
+          },
+          {
+            text: 'Converted onboarding components to use NativeWind for better consistency.',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    version: '1.1.0',
+    date: 'Feb 08, 2026',
+    sections: [
+      {
+        title: 'Performance',
+        items: [
+          {
+            text: 'Optimized build performance by switching to PrismLight for syntax highlighting.',
+            tags: ['performance', 'build'],
+          },
+          {
+            text: 'Refined Vite manualChunks configuration to reduce main bundle size.',
+          },
+        ],
+      },
+      {
+        title: 'Components',
+        items: [
+          {
+            text: 'Added responsive viewer to desktop modals for device preview simulation.',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    version: '1.0.0',
+    date: 'Feb 05, 2026',
+    sections: [
+      {
+        title: 'Initial Launch',
+        items: [
+          {
+            text: 'Watermelon UI is now live with a comprehensive collection of React components, dashboards, and blocks.',
+          },
+        ],
+      },
+    ],
+  },
+];

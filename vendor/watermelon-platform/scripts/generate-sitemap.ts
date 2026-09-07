@@ -1,0 +1,239 @@
+/**
+ * Dynamic sitemap generator.
+ *
+ * Auto-discovers every public page from the SAME content sources the app uses
+ * to build its routes, so adding a new component / block / dashboard / category
+ * automatically shows up in the sitemap on the next build — no manual edits here.
+ *
+ * URL patterns are kept in sync with src/components/layout/app-routes.tsx:
+ *   - Home:                /home
+ *   - Animated components: /animated-components/:slug
+ *                          /animated-components/category/:category
+ *   - UI components:       /components/:category
+ *   - Dashboards:          /dashboard/:slug
+ *   - Templates:           /template/:slug
+ *   - Blocks:              /block/:slug
+ *                          /blocks/:category
+ *   - Showcases:           /showcase/:slug
+ *
+ * Run via `bun run sitemap` (also runs automatically as part of `bun run build`).
+ */
+import fs from 'fs';
+import path from 'path';
+import { execFileSync } from 'child_process';
+import matter from 'gray-matter';
+
+const BASE_URL = 'https://ui.watermelon.sh';
+const PUBLIC_DIR = path.resolve(process.cwd(), 'public');
+const CONTENTS_DIR = path.resolve(process.cwd(), 'src/data/contents');
+const WORKER_DIR = path.resolve(process.cwd(), 'worker');
+
+type RouteEntry = { path: string; lastmod: string };
+
+function toCategorySlug(category: string): string {
+  return category.trim().toLowerCase();
+}
+
+/** Recursively collect every .mdx file under a directory. */
+function findMdxFiles(dir: string): string[] {
+  if (!fs.existsSync(dir)) return [];
+  const out: string[] = [];
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) out.push(...findMdxFiles(full));
+    else if (entry.name.endsWith('.mdx')) out.push(full);
+  }
+  return out;
+}
+
+/** File last-modified date as YYYY-MM-DD (real <lastmod>, not the build date). */
+function fileDate(file: string): string {
+  try {
+    const gitDate = execFileSync(
+      'git',
+      ['log', '-1', '--format=%cs', '--', file],
+      { cwd: process.cwd(), encoding: 'utf-8' },
+    ).trim();
+    if (gitDate) return gitDate;
+  } catch {
+    // Fall back to filesystem mtime when git metadata is unavailable.
+  }
+
+  return fs.statSync(file).mtime.toISOString().split('T')[0];
+}
+
+const today = new Date().toISOString().split('T')[0];
+
+// ── Static pages (must mirror the real routes in app-routes.tsx) ──────────────
+const staticRoutes: RouteEntry[] = [
+  '',
+  '/home',
+  '/animated-components',
+  '/components',
+  '/dashboards',
+  '/templates',
+  '/blocks',
+  '/showcases',
+  '/installation',
+  '/framework-support',
+  '/developers',
+  '/developers/auth',
+  '/developers/mcp',
+  '/developers/status',
+  '/about',
+  '/contact',
+  '/changelog',
+  '/terms',
+  '/privacy',
+  '/copyright',
+].map((p) => ({ path: p, lastmod: today }));
+
+const routes: RouteEntry[] = [...staticRoutes];
+// Preview pages are intentionally excluded from the sitemap, but the Worker
+// needs an exact allowlist so embedded previews are not mistaken for 404s.
+const internalRoutes: string[] = [];
+
+// ── Animated components — contents/registry/*.mdx ─────────────────────────────
+// Mirrors animated-components-registry.tsx: needs slug + title; category drives
+// the /animated-components/category/:category pages (slug === raw category).
+{
+  const animatedCategories = new Set<string>();
+  for (const file of findMdxFiles(path.join(CONTENTS_DIR, 'registry'))) {
+    const { slug, title, category } = matter(
+      fs.readFileSync(file, 'utf-8'),
+    ).data;
+    if (!slug || !title) continue;
+    routes.push({
+      path: `/animated-components/${slug}`,
+      lastmod: fileDate(file),
+    });
+    if (category) animatedCategories.add(String(category));
+  }
+  for (const category of animatedCategories) {
+    routes.push({
+      path: `/animated-components/category/${encodeURIComponent(category)}`,
+      lastmod: today,
+    });
+  }
+}
+
+// ── Dashboards — contents/dashboards/*/*.mdx ────────────────────────────────
+// Mirrors dashboards.tsx: every dashboard frontmatter with slug + title maps
+// to /dashboard/:slug and is listed from the same MDX content source.
+{
+  for (const file of findMdxFiles(path.join(CONTENTS_DIR, 'dashboards'))) {
+    const { slug, title } = matter(fs.readFileSync(file, 'utf-8')).data;
+    if (!slug || !title) continue;
+    routes.push({ path: `/dashboard/${slug}`, lastmod: fileDate(file) });
+    internalRoutes.push(`/preview/dashboard/${slug}`);
+  }
+}
+
+// ── Templates — contents/templates/*/*.mdx ──────────────────────────────────
+// Mirrors templates.tsx: every template frontmatter with slug + title maps to
+// /template/:slug and is listed from the same MDX content source.
+{
+  for (const file of findMdxFiles(path.join(CONTENTS_DIR, 'templates'))) {
+    const { slug, title } = matter(fs.readFileSync(file, 'utf-8')).data;
+    if (!slug || !title) continue;
+    routes.push({ path: `/template/${slug}`, lastmod: fileDate(file) });
+    internalRoutes.push(`/preview/template/${slug}`);
+  }
+}
+
+// ── Blocks — contents/blocks/**/*.mdx ─────────────────────────────────────────
+// Mirrors blocks.tsx: needs slug + title. Category pages are published with the
+// same lowercase slugs the app uses in navigation.
+{
+  const blockCategories = new Set<string>();
+  for (const file of findMdxFiles(path.join(CONTENTS_DIR, 'blocks'))) {
+    const { slug, title, category } = matter(
+      fs.readFileSync(file, 'utf-8'),
+    ).data;
+    if (!slug || !title) continue;
+    routes.push({ path: `/block/${slug}`, lastmod: fileDate(file) });
+    internalRoutes.push(`/preview/block/${slug}`);
+    if (category) blockCategories.add(toCategorySlug(String(category)));
+  }
+  for (const category of blockCategories) {
+    routes.push({
+      path: `/blocks/${encodeURIComponent(category)}`,
+      lastmod: today,
+    });
+  }
+}
+
+// ── Showcases — contents/showcases/*.mdx ─────────────────────────────────────
+{
+  for (const file of findMdxFiles(path.join(CONTENTS_DIR, 'showcases'))) {
+    const { slug, title } = matter(fs.readFileSync(file, 'utf-8')).data;
+    if (!slug || !title) continue;
+    routes.push({ path: `/showcase/${slug}`, lastmod: fileDate(file) });
+  }
+}
+
+// ── UI component categories — contents/components/*/config.ts ─────────────────
+// Mirrors components-registry.ts: each category exposes a `slug` used by
+// the /components/:category route.
+{
+  const componentsDir = path.join(CONTENTS_DIR, 'components');
+  if (fs.existsSync(componentsDir)) {
+    for (const entry of fs.readdirSync(componentsDir, {
+      withFileTypes: true,
+    })) {
+      if (!entry.isDirectory()) continue;
+      const configPath = path.join(componentsDir, entry.name, 'config.ts');
+      if (!fs.existsSync(configPath)) continue;
+      const match = fs
+        .readFileSync(configPath, 'utf-8')
+        .match(/slug:\s*['"]([^'"]+)['"]/);
+      if (match) {
+        routes.push({
+          path: `/components/${match[1]}`,
+          lastmod: fileDate(configPath),
+        });
+      }
+    }
+  }
+}
+
+// ── Emit XML ──────────────────────────────────────────────────────────────────
+// De-dupe by path (defensive) and sort for stable, diff-friendly output.
+const seen = new Set<string>();
+const unique = routes
+  .filter((r) => (seen.has(r.path) ? false : (seen.add(r.path), true)))
+  .sort((a, b) => a.path.localeCompare(b.path));
+const uniqueInternalRoutes = [...new Set(internalRoutes)].sort();
+
+const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${unique
+  .map(
+    (r) => `  <url>
+    <loc>${BASE_URL}${r.path}</loc>
+    <lastmod>${r.lastmod}</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>${r.path === '' ? '1.0' : '0.8'}</priority>
+  </url>`,
+  )
+  .join('\n')}
+</urlset>`;
+
+if (!fs.existsSync(PUBLIC_DIR)) fs.mkdirSync(PUBLIC_DIR);
+fs.writeFileSync(path.join(PUBLIC_DIR, 'sitemap.xml'), sitemap);
+if (!fs.existsSync(WORKER_DIR)) fs.mkdirSync(WORKER_DIR);
+fs.writeFileSync(
+  path.join(WORKER_DIR, 'routes.generated.ts'),
+  `// This file is auto-generated by scripts/generate-sitemap.ts
+// Do not edit by hand.
+
+export const knownRoutes = ${JSON.stringify(
+    unique.map((route) => route.path || '/'),
+    null,
+    2,
+  )} as const;
+
+export const internalRoutes = ${JSON.stringify(uniqueInternalRoutes, null, 2)} as const;
+`,
+);
+console.log(`Sitemap generated with ${unique.length} routes.`);

@@ -1,0 +1,45 @@
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from '@/components/base-ui/avatar';
+import { Badge } from '@/components/base-ui/badge';
+
+type Profile = {
+  name: string;
+  avatar: string;
+  count: number;
+};
+
+const profile: Profile = {
+  name: 'Olivia',
+  avatar: 'https://assets.watermelon.sh/wm_olivia.png',
+  count: 12,
+};
+
+const getInitials = (name: string) =>
+  name
+    .split(/\s+/)
+    .map((word) => word.slice(0, 1))
+    .join('');
+
+const Avatar11 = () => {
+  return (
+    <div className="relative w-fit">
+      <Avatar className="size-10 rounded-full overflow-hidden">
+        <AvatarImage
+          src={profile.avatar}
+          alt={profile.name}
+        />
+        <AvatarFallback className="text-xs">
+          {getInitials(profile.name)}
+        </AvatarFallback>
+      </Avatar>
+      <Badge className="absolute -top-2.5 -right-2.5 h-5 min-w-5 bg-slate-700 px-1 text-white tabular-nums dark:bg-slate-200 dark:text-slate-900">
+        {profile.count}
+      </Badge>
+    </div>
+  );
+};
+
+export default Avatar11;

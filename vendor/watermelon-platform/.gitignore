@@ -1,0 +1,47 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+.env
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.agents
+.agent
+.cursor
+.cursorignore
+.wrangler
+
+# Generated shadcn registry payloads are rebuilt during every platform deploy.
+/public/r/
+/public/registry.json
+
+/skills/
+
+# Publish the Watermelon plugin marketplace and skill while keeping local agent files private.
+!/.agents/
+/.agents/*
+!/.agents/plugins/
+/.agents/plugins/*
+!/.agents/plugins/marketplace.json
+!/skills/
+/skills/*
+!/skills/watermelon-ui/
+!/skills/watermelon-ui/SKILL.md

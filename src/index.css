@@ -1,0 +1,194 @@
+@import 'tailwindcss';
+
+/*
+ * The vendored upstream repos are reference source, not part of this app.
+ * Without this, Tailwind's automatic source detection scans them and emits
+ * utilities for every class in two entire component libraries.
+ */
+@source not '../vendor';
+@import 'tw-animate-css';
+@import './styles/vendor/shadcn-tailwind.css';
+@import '@fontsource-variable/inter';
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * ---------------------------------------------------------------------------
+ * LYNKRS BRAND TOKENS
+ * ---------------------------------------------------------------------------
+ * Every colour in the site resolves back to the variables below. To rebrand,
+ * change --brand and the neutral ramp here and the whole system follows.
+ * Values are oklch(lightness chroma hue) so you can shift hue without
+ * rebalancing contrast.
+ * ---------------------------------------------------------------------------
+ */
+
+:root {
+  /* The one accent. Swap this line to rebrand. */
+  --brand: oklch(0.85 0.198 124);
+  --brand-foreground: oklch(0.16 0.01 260);
+
+  --background: oklch(0.99 0 0);
+  --foreground: oklch(0.16 0.01 260);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.16 0.01 260);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.16 0.01 260);
+
+  --primary: var(--brand);
+  --primary-foreground: var(--brand-foreground);
+  --secondary: oklch(0.968 0.002 260);
+  --secondary-foreground: oklch(0.22 0.008 260);
+  --muted: oklch(0.968 0.002 260);
+  --muted-foreground: oklch(0.55 0.012 260);
+  --accent: oklch(0.962 0.003 260);
+  --accent-foreground: oklch(0.2 0.008 260);
+  --destructive: oklch(0.58 0.22 27);
+
+  --border: oklch(0.916 0.003 260);
+  --input: oklch(0.916 0.003 260);
+  --ring: oklch(0.7 0.01 260);
+
+  --chart-1: var(--brand);
+  --chart-2: oklch(0.65 0.18 250);
+  --chart-3: oklch(0.72 0.16 195);
+  --chart-4: oklch(0.7 0.19 55);
+  --chart-5: oklch(0.6 0.2 310);
+
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.16 0.01 260);
+  --sidebar-primary: var(--brand);
+  --sidebar-primary-foreground: var(--brand-foreground);
+  --sidebar-accent: oklch(0.962 0.003 260);
+  --sidebar-accent-foreground: oklch(0.2 0.008 260);
+  --sidebar-border: oklch(0.916 0.003 260);
+  --sidebar-ring: oklch(0.7 0.01 260);
+
+  --radius: 0.75rem;
+}
+
+.dark {
+  --background: oklch(0.145 0.008 260);
+  --foreground: oklch(0.975 0 0);
+  --card: oklch(0.185 0.008 260);
+  --card-foreground: oklch(0.975 0 0);
+  --popover: oklch(0.185 0.008 260);
+  --popover-foreground: oklch(0.975 0 0);
+
+  --primary: var(--brand);
+  --primary-foreground: var(--brand-foreground);
+  --secondary: oklch(0.26 0.008 260);
+  --secondary-foreground: oklch(0.975 0 0);
+  --muted: oklch(0.24 0.008 260);
+  --muted-foreground: oklch(0.7 0.01 260);
+  --accent: oklch(0.3 0.008 260);
+  --accent-foreground: oklch(0.975 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+
+  --border: oklch(1 0 0 / 11%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.55 0.01 260);
+
+  --sidebar: oklch(0.185 0.008 260);
+  --sidebar-foreground: oklch(0.975 0 0);
+  --sidebar-accent: oklch(0.26 0.008 260);
+  --sidebar-accent-foreground: oklch(0.975 0 0);
+  --sidebar-border: oklch(1 0 0 / 11%);
+  --sidebar-ring: oklch(0.55 0.01 260);
+}
+
+@theme inline {
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    @apply font-sans antialiased;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Respect people who asked the OS to calm animations down. */
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+/* Opt-in, not global: hide a scrollbar only where the design needs it gone. */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

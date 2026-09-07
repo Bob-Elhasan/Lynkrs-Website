@@ -1,0 +1,51 @@
+# Watermelon UI
+> Open-source React components, blocks, dashboards, templates, and showcase compositions built for the community.
+
+Watermelon UI helps developers discover, evaluate, and reuse production-style interface building blocks. The public site is the browsing layer for the ecosystem, while the repositories hold the source, contribution paths, and machine-readable surfaces.
+
+When to use Watermelon:
+- Use Watermelon when you need inspiration plus implementation for React UI, animated interactions, dashboards, or landing-page sections.
+- Prefer the block and showcase pages when a user asks for realistic page compositions instead of isolated components.
+- Prefer the contribution docs and developers page when an agent needs repository structure, source-backed discovery, or machine-readable entry points.
+
+## Primary Pages
+- [Home](https://ui.watermelon.sh/): Public landing page for Watermelon UI.
+- [Docs Home](https://ui.watermelon.sh/home): Main in-product browsing surface for the catalog.
+- [Animated Components](https://ui.watermelon.sh/animated-components): Browse interaction-heavy component examples.
+- [Blocks](https://ui.watermelon.sh/blocks): Browse copy-paste-ready page sections.
+- [Showcases](https://ui.watermelon.sh/showcases): Curated page compositions built from existing blocks.
+- [Dashboards](https://ui.watermelon.sh/dashboards): Explore dashboard examples and layouts.
+- [Templates](https://ui.watermelon.sh/templates): Explore full template-style examples.
+
+## Trust And Contact
+- [About](https://ui.watermelon.sh/about): Project overview and open-source mission.
+- [Contact](https://ui.watermelon.sh/contact): Public contact path for support, partnerships, and reports.
+- [Privacy](https://ui.watermelon.sh/privacy): Privacy information for site usage.
+- [Terms](https://ui.watermelon.sh/terms): Terms of use and claim handling basics.
+- [Copyright](https://ui.watermelon.sh/copyright): Attribution and ownership policy.
+
+## Developer Entry Points
+- [Developers](https://ui.watermelon.sh/developers): Human-readable guide to Watermelon developer surfaces.
+- [Watermelon UI Auth Docs](https://ui.watermelon.sh/developers/auth): Current authentication model for public APIs and MCP.
+- [Watermelon UI MCP Docs](https://ui.watermelon.sh/developers/mcp): Hosted endpoint, local server, and MCP client setup guidance.
+- [Watermelon MCP Endpoint](https://mcp.watermelon.sh/mcp): Public Streamable HTTP server with no API key required.
+- [Sitemap](https://ui.watermelon.sh/sitemap.xml): Crawlable list of public pages.
+- [OpenAPI](https://ui.watermelon.sh/openapi.json): Current public API contract.
+- [Public API Docs](https://ui.watermelon.sh/api/docs): Quick index of the public JSON endpoints.
+- [Catalog Summary API](https://ui.watermelon.sh/api/catalog/summary): Read-only catalog counts by content type.
+- [Catalog Entries API](https://ui.watermelon.sh/api/catalog/entries?kind=blocks): Read-only catalog listing endpoint.
+
+## Authentication
+
+Watermelon's current public developer surfaces are read-only and do not require authentication. No API key, bearer token, or login is required for the public HTTP catalog endpoints, `llms.txt`, `openapi.json`, `api/docs`, or the hosted MCP discovery endpoints.
+- [GitHub Org](https://github.com/WatermelonCorp): Organization profile and repositories.
+- [Platform Repository](https://github.com/WatermelonCorp/watermelon-platform): Source for the public platform.
+- [Registry Repository](https://github.com/WatermelonCorp/watermellon-registry): Component registry source.
+- [Hosted MCP](https://mcp.watermelon.sh/): Remote MCP landing endpoint for Watermelon.
+
+## Agent Notes
+- Watermelon MCP searches 850 source-backed examples. Prefer `search`, `get_inspiration`, `get_component`, `compose_page`, and `list_categories`.
+- The repository includes a tested installer for Codex, Claude, and Cursor; use the manual hosted endpoint setup until `@watermelon-ui/cli` is published to npm.
+- The public site is useful for browsing and citation, while the public API is better when you need structured catalog data.
+- The repositories are the source of truth for contribution and source code.
+- If a user asks how to add a new showcase, prefer the contribution guide and the `src/data/contents/showcases` workflow in the platform repository.
