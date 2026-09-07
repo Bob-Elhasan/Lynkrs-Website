@@ -1,4 +1,5 @@
 import { closing, together } from '@/content/journey';
+import { revealFromFocus } from '@/xr/motion';
 import { PALETTE } from '@/xr/palette';
 import { StationFrame } from '@/xr/stations/station-frame';
 import { SIZE, Stack, body, eyebrow, headline, numbered, stamp } from '@/xr/ui/panel';
@@ -11,10 +12,12 @@ export function TogetherStation({
   animate: boolean;
   focus: number;
 }) {
+  const reveal = revealFromFocus(focus);
   return (
     <StationFrame position={[0, -12.4, -252]} animate={animate} seed={8.8} focus={focus}>
       <group position={[-8.6, 5.2, 0]}>
         <Stack
+          reveal={reveal}
           blocks={[
             eyebrow(`${together.number} ${together.title}`),
             stamp(together.stamp, 7.92),
@@ -27,6 +30,7 @@ export function TogetherStation({
 
       <group position={[2.4, 2.4, -2.2]}>
         <Stack
+          reveal={reveal}
           blocks={[
             eyebrow(closing.eyebrow, 6.12),
             headline(closing.headline, SIZE.headline),

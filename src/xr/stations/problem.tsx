@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import type { Group } from 'three';
 
 import { problem } from '@/content/journey';
+import { CARD_STAGGER, revealFromFocus, staggeredReveal } from '@/xr/motion';
 import { PALETTE } from '@/xr/palette';
 import { StationFrame } from '@/xr/stations/station-frame';
 import { SIZE, Stack, body, eyebrow, headline, numbered, stamp } from '@/xr/ui/panel';
@@ -12,7 +13,15 @@ import { SIZE, Stack, body, eyebrow, headline, numbered, stamp } from '@/xr/ui/p
  * pitch is about, shown rather than described. Driven by journey position, so
  * the separation happens under the visitor's own scroll.
  */
-function Shards({ spread, animate }: { spread: number; animate: boolean }) {
+function Shards({
+  spread,
+  animate,
+  reveal,
+}: {
+  spread: number;
+  animate: boolean;
+  reveal: number;
+}) {
   const group = useRef<Group>(null);
   const offsets: [number, number, number][] = [
     [-1.5, 1.1, 0],
@@ -37,7 +46,7 @@ function Shards({ spread, animate }: { spread: number; animate: boolean }) {
   });
 
   return (
-    <group ref={group} position={[6.4, -1.4, -7]}>
+    <group ref={group} position={[6.4, -1.4, -7]} scale={reveal}>
       {offsets.map((_, i) => (
         <mesh key={i}>
           <boxGeometry args={[1.15, 1.15, 0.09]} />
@@ -63,10 +72,12 @@ export function ProblemStation({
   progress: number;
   focus: number;
 }) {
+  const reveal = revealFromFocus(focus);
   return (
     <StationFrame position={[0, -2, -42]} animate={animate} seed={1.4} focus={focus}>
       <group position={[-8.4, 3.6, 0]}>
         <Stack
+          reveal={reveal}
           blocks={[
             eyebrow(`${problem.number} ${problem.title}`),
             headline(problem.lede, SIZE.headline, 7.6),
@@ -83,10 +94,13 @@ export function ProblemStation({
           key={cost.number}
           position={[0.4 + (i % 2) * 4.9, 3.2 - Math.floor(i / 2) * 3.4, -0.4]}
         >
-          <Stack blocks={[numbered(cost.number, cost.title, cost.body, 4.5)]} />
+          <Stack
+            reveal={staggeredReveal(reveal, i, CARD_STAGGER)}
+            blocks={[numbered(cost.number, cost.title, cost.body, 4.5)]}
+          />
         </group>
       ))}
-      <Shards spread={progress} animate={animate} />
+      <Shards spread={progress} animate={animate} reveal={reveal} />
     </StationFrame>
   );
 }

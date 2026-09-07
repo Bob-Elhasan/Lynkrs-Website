@@ -246,3 +246,19 @@
   clip-path: none;
   white-space: normal;
 }
+
+/*
+ * The 3D canvas is a fixed, full-viewport layer that sits behind the DOM
+ * chrome purely by paint order (it mounts first in App.tsx; stage.tsx keeps
+ * it at z-0, not a negative z-index — a negative z-index paints, and
+ * hit-tests, *behind* normal in-flow boxes within the same stacking
+ * context, including #root's own layer, which made every pointer event in
+ * the canvas dead on arrival). With plain DOM order that risk is gone, but
+ * #root staying pointer-events:none costs nothing and is one less thing to
+ * get wrong if the layering ever changes — each real interactive region
+ * opts back in explicitly (site-header.tsx, root-layout.tsx's main/footer,
+ * stage.tsx's canvas and its "Enter in VR" button).
+ */
+#root {
+  pointer-events: none;
+}

@@ -73,7 +73,7 @@ export function Stage({ children, fallback }: StageProps) {
 
   return (
     <>
-      <div className="fixed inset-0 -z-10" aria-hidden="true" data-stage={capability.tier}>
+      <div className="pointer-events-auto fixed inset-0 z-0" aria-hidden="true" data-stage={capability.tier}>
         <Canvas
           dpr={budget.dpr}
           shadows={budget.shadows}
@@ -91,7 +91,7 @@ export function Stage({ children, fallback }: StageProps) {
         <button
           type="button"
           onClick={() => setMode('xr')}
-          className="border-brand/50 bg-brand/15 text-foreground hover:bg-brand/25 fixed right-5 bottom-5 z-40 rounded-full border px-4 py-2 text-sm font-medium backdrop-blur"
+          className="border-brand/50 bg-brand/15 text-foreground hover:bg-brand/25 pointer-events-auto fixed right-5 bottom-5 z-40 rounded-full border px-4 py-2 text-sm font-medium backdrop-blur"
         >
           Enter in VR
         </button>

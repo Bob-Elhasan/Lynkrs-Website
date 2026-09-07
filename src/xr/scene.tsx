@@ -17,6 +17,9 @@ import { TogetherStation } from '@/xr/stations/together';
 type SceneProps = {
   target: number;
   reducedMotion: boolean;
+  /** Plain closure from react-router's useNavigate, resolved where Router
+   * context actually exists — see journey-stage.tsx for why. */
+  navigate: (path: string) => void;
 };
 
 /**
@@ -26,7 +29,7 @@ type SceneProps = {
  * position, so effects like the shards separating are driven by the visitor's
  * own scroll rather than a timer.
  */
-export function Scene({ target, reducedMotion }: SceneProps) {
+export function Scene({ target, reducedMotion, navigate }: SceneProps) {
   const animate = !reducedMotion;
 
   const local = useMemo(
@@ -41,14 +44,25 @@ export function Scene({ target, reducedMotion }: SceneProps) {
   );
 
   /**
-   * Per-station focus: 1 at the station, falling to 0 roughly one station away.
-   * Stations below the threshold unmount, so only the one you are reading (and
-   * its immediate neighbour, mid-transition) is ever drawn.
+   * Per-station focus, 1 at dead-centre falling to 0 by roughly halfway to
+   * the neighbouring station.
+   *
+   * troika's text material does not read the scene's THREE.Fog at all (only
+   * the geometry meshes do, via meshStandardMaterial's default fog:true), so
+   * text has no built-in distance falloff the way the shard/pylon geometry
+   * does. A wide falloff radius here — this was 1.35x the inter-station
+   * spacing, tuned back when a hard visibility cutoff hid the overlap — left
+   * two neighbouring stations' text both near full opacity around the
+   * midpoint between them: legible, competing copy stacked on screen. 0.6x
+   * keeps a station's "fully on" window comfortably inside its own dwell
+   * time while letting it fade to nothing well before the midpoint, so the
+   * handoff is a crossfade through the corridor's own space rather than a
+   * text pileup.
    */
   const focus = useMemo(() => {
     const span = 1 / (Object.keys(stationT).length - 1);
     const at = (id: keyof typeof stationT) =>
-      clamp(1 - Math.abs(target - stationT[id]) / (span * 1.35));
+      clamp(1 - Math.abs(target - stationT[id]) / (span * 0.6));
     return {
       arrival: at('arrival'),
       problem: at('problem'),
@@ -87,8 +101,8 @@ export function Scene({ target, reducedMotion }: SceneProps) {
       <PositioningStation animate={animate} progress={local.positioning} focus={focus.positioning} />
       <PrinciplesStation animate={animate} focus={focus.principles} />
       <MethodStation animate={animate} progress={local.method} focus={focus.method} />
-      <SuiteStation animate={animate} focus={focus.suite} />
-      <ModulesStation animate={animate} focus={focus.modules} />
+      <SuiteStation animate={animate} focus={focus.suite} navigate={navigate} />
+      <ModulesStation animate={animate} focus={focus.modules} navigate={navigate} />
       <TogetherStation animate={animate} focus={focus.together} />
       <ContactStation animate={animate} focus={focus.contact} />
 

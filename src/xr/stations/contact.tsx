@@ -1,5 +1,6 @@
 import { closing } from '@/content/journey';
 import { siteConfig } from '@/content/site';
+import { revealFromFocus } from '@/xr/motion';
 import { PALETTE } from '@/xr/palette';
 import { StationFrame } from '@/xr/stations/station-frame';
 import { SIZE, Stack, body, eyebrow, headline, stamp } from '@/xr/ui/panel';
@@ -18,10 +19,12 @@ export function ContactStation({
   animate: boolean;
   focus: number;
 }) {
+  const reveal = revealFromFocus(focus);
   return (
     <StationFrame position={[0, -13.2, -284]} animate={animate} seed={9.9} focus={focus}>
       <group position={[-8, 3.2, 0]}>
         <Stack
+          reveal={reveal}
           blocks={[
             eyebrow(closing.eyebrow),
             headline(closing.headline, SIZE.headline),

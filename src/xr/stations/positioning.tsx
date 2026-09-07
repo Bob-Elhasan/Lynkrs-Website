@@ -3,13 +3,21 @@ import { useFrame } from '@react-three/fiber';
 import type { Group } from 'three';
 
 import { positioning } from '@/content/journey';
-import { clamp } from '@/xr/motion';
+import { clamp, revealFromFocus } from '@/xr/motion';
 import { PALETTE } from '@/xr/palette';
 import { StationFrame } from '@/xr/stations/station-frame';
 import { SIZE, Stack, body, eyebrow, headline, stamp } from '@/xr/ui/panel';
 
 /** The answer to the problem: the same shards converge into one lit system. */
-function Assembly({ assembly, animate }: { assembly: number; animate: boolean }) {
+function Assembly({
+  assembly,
+  animate,
+  reveal,
+}: {
+  assembly: number;
+  animate: boolean;
+  reveal: number;
+}) {
   const group = useRef<Group>(null);
   const seats: [number, number, number][] = [
     [-0.6, 0.6, 0], [0.6, 0.6, 0], [-0.6, -0.6, 0], [0.6, -0.6, 0],
@@ -37,7 +45,7 @@ function Assembly({ assembly, animate }: { assembly: number; animate: boolean })
   });
 
   return (
-    <group ref={group} position={[-6, 0.2, -3]}>
+    <group ref={group} position={[-6, 0.2, -3]} scale={reveal}>
       {seats.map((_, i) => (
         <mesh key={i}>
           <boxGeometry args={[1.15, 1.15, 0.09]} />
@@ -63,10 +71,12 @@ export function PositioningStation({
   progress: number;
   focus: number;
 }) {
+  const reveal = revealFromFocus(focus);
   return (
     <StationFrame position={[2, -3.4, -72]} animate={animate} seed={2.7} focus={focus}>
       <group position={[0.6, 3.4, 0]}>
         <Stack
+          reveal={reveal}
           blocks={[
             eyebrow(`${positioning.number} ${positioning.title}`),
             headline(positioning.lede, SIZE.headline),
@@ -75,7 +85,7 @@ export function PositioningStation({
           ]}
         />
       </group>
-      <Assembly assembly={progress} animate={animate} />
+      <Assembly assembly={progress} animate={animate} reveal={reveal} />
       <pointLight
         position={[-6, 0.2, -1]}
         intensity={16 + progress * 26}

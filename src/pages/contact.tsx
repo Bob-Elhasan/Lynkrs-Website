@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 
 import { MirrorSection, Prose } from '@/components/mirror/primitives';
+import { MagneticCta } from '@/components/layout/magnetic-cta';
 import { Seo } from '@/components/seo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -209,10 +210,12 @@ export default function ContactPage() {
               </p>
             ) : null}
 
-            <Button type="submit" size="lg" className="h-11 w-full sm:w-auto sm:px-8"
-              disabled={status === 'submitting'}>
-              {status === 'submitting' ? 'Sending…' : 'Book a growth audit'}
-            </Button>
+            <MagneticCta className="w-full sm:w-auto">
+              <Button type="submit" size="lg" className="h-11 w-full sm:w-auto sm:px-8"
+                disabled={status === 'submitting'}>
+                {status === 'submitting' ? 'Sending…' : 'Book a growth audit'}
+              </Button>
+            </MagneticCta>
           </form>
         )}
       </MirrorSection>

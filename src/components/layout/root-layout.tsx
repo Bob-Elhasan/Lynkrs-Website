@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 
+import { JourneyRail } from '@/components/layout/journey-rail';
 import { SiteFooter } from '@/components/layout/site-footer';
 import { SiteHeader } from '@/components/layout/site-header';
 import { cn } from '@/lib/utils';
@@ -35,11 +36,20 @@ export function RootLayout() {
   const stageActive = useStageActive();
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    // pointer-events-none on the whole layout, not just the spacer below:
+    // this div is a normal in-flow box, and CSS paints negative-z-index
+    // positioned elements (the fixed, -z-10 canvas) *before* normal-flow
+    // boxes in the same stacking context — meaning this wrapper, despite
+    // being fully transparent, sits in front of the canvas for hit-testing
+    // even though the canvas paints on top visually. Without this, nothing
+    // in the canvas ever receives a pointer event anywhere on the page: not
+    // the module/bundle cards' onClick, not even the camera's pointer
+    // parallax. Each real interactive region below opts back in explicitly.
+    <div className="pointer-events-none flex min-h-dvh flex-col">
       <ScrollToTop />
       <a
         href="#main"
-        className="bg-primary text-primary-foreground focus:ring-ring sr-only rounded-md px-4 py-2 text-sm font-medium focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:ring-2"
+        className="bg-primary text-primary-foreground focus:ring-ring pointer-events-auto sr-only rounded-md px-4 py-2 text-sm font-medium focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:ring-2"
       >
         Skip to content
       </a>
@@ -48,7 +58,7 @@ export function RootLayout() {
 
       <main
         id="main"
-        className={cn('flex-1', stageActive && 'visually-hidden')}
+        className={cn('pointer-events-auto flex-1', stageActive && 'visually-hidden')}
         // The canvas is aria-hidden, so this mirror is the only accessible
         // representation of the content. It stays in the tree either way.
         data-mirror={stageActive ? 'hidden' : 'visible'}
@@ -57,8 +67,9 @@ export function RootLayout() {
       </main>
 
       <JourneyScroll active={stageActive} />
+      <JourneyRail />
 
-      <div className={cn(stageActive && 'visually-hidden')}>
+      <div className={cn('pointer-events-auto', stageActive && 'visually-hidden')}>
         <SiteFooter />
       </div>
     </div>

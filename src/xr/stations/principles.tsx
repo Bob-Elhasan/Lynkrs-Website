@@ -1,4 +1,5 @@
 import { principles } from '@/content/journey';
+import { CARD_STAGGER, revealFromFocus, staggeredReveal } from '@/xr/motion';
 import { PALETTE } from '@/xr/palette';
 import { StationFrame } from '@/xr/stations/station-frame';
 import { Stack, eyebrow, numbered } from '@/xr/ui/panel';
@@ -11,10 +12,11 @@ export function PrinciplesStation({
   animate: boolean;
   focus: number;
 }) {
+  const reveal = revealFromFocus(focus);
   return (
     <StationFrame position={[-1, -4.6, -104]} animate={animate} seed={3.9} focus={focus}>
       <group position={[-8, 5, 0]}>
-        <Stack blocks={[eyebrow(`${principles.number} ${principles.title}`)]} />
+        <Stack reveal={reveal} blocks={[eyebrow(`${principles.number} ${principles.title}`)]} />
       </group>
 
       {principles.items.map((item, i) => {
@@ -24,6 +26,7 @@ export function PrinciplesStation({
           <group key={item.number} position={[x, y, i % 2 === 0 ? -0.5 : -1.6]}>
             <Stack
               gap={0.1}
+              reveal={staggeredReveal(reveal, i, CARD_STAGGER)}
               blocks={[eyebrow(item.caption, 7.2), numbered(item.number, item.title, undefined, 7.2)]}
             />
           </group>

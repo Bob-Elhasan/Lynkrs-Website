@@ -3,13 +3,13 @@ import { useFrame } from '@react-three/fiber';
 import type { Mesh } from 'three';
 
 import { arrival } from '@/content/journey';
-import { AMBIENT } from '@/xr/motion';
+import { AMBIENT, revealFromFocus } from '@/xr/motion';
 import { PALETTE } from '@/xr/palette';
 import { StationFrame } from '@/xr/stations/station-frame';
 import { SIZE, Stack, body, headline, stamp } from '@/xr/ui/panel';
 
 /** The brand object: one form, lit from within, slowly turning. */
-function GrowthCore({ animate }: { animate: boolean }) {
+function GrowthCore({ animate, reveal }: { animate: boolean; reveal: number }) {
   const mesh = useRef<Mesh>(null);
   useFrame((state, delta) => {
     if (!animate || !mesh.current) return;
@@ -17,7 +17,7 @@ function GrowthCore({ animate }: { animate: boolean }) {
     mesh.current.rotation.x = Math.sin(state.clock.elapsedTime * 0.14) * 0.14;
   });
   return (
-    <mesh ref={mesh} position={[6.4, 0.6, -2.5]}>
+    <mesh ref={mesh} position={[6.4, 0.6, -2.5]} scale={reveal}>
       <icosahedronGeometry args={[1.5, 1]} />
       <meshStandardMaterial
         color={PALETTE.blue}
@@ -38,10 +38,12 @@ export function ArrivalStation({
   animate: boolean;
   focus: number;
 }) {
+  const reveal = revealFromFocus(focus);
   return (
     <StationFrame position={[0, 0, -8]} animate={animate} seed={0} focus={focus}>
       <group position={[-7.4, 2.8, 0]}>
         <Stack
+          reveal={reveal}
           blocks={[
             stamp(arrival.tagline),
             headline(arrival.headline.join(' '), SIZE.headlineLarge),
@@ -49,7 +51,7 @@ export function ArrivalStation({
           ]}
         />
       </group>
-      <GrowthCore animate={animate} />
+      <GrowthCore animate={animate} reveal={reveal} />
       <pointLight position={[6.4, 0.6, -0.5]} intensity={22} color={PALETTE.blue} distance={18} />
     </StationFrame>
   );

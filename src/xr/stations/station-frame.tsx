@@ -13,16 +13,24 @@ type StationFrameProps = {
   /**
    * How near the camera is to this station on the journey, 0–1.
    *
-   * Stations sit close enough together that two are in frame at once, which
-   * makes distant text read as noise across the one you are meant to be
-   * reading. Below the threshold the station is unmounted from the render
-   * entirely — cheaper and cleaner than fading, which would need transparency
-   * sorting across every material in the scene.
+   * Used only for the mount/unmount culling gate below. The visible
+   * fade/scale-in itself is each station's own responsibility: every station
+   * derives `revealFromFocus(focus)` and threads it into its own Stacks and
+   * geometry (see motion.ts), so content fades in and out smoothly instead of
+   * this component switching it on and off.
    */
   focus?: number;
 };
 
-const VISIBLE_THRESHOLD = 0.34;
+/**
+ * Well below the reveal band's start (0.2, see motion.ts) so a station is
+ * always fully invisible — reveal already at 0 — for a comfortable margin
+ * before it mounts and after it unmounts. That margin is what keeps the
+ * mount/unmount boundary itself from ever being the moment something pops:
+ * by the time a station is culled, revealFromFocus(focus) already resolved
+ * it to zero several frames earlier.
+ */
+const UNMOUNT_THRESHOLD = 0.06;
 
 export function StationFrame({
   position,
@@ -41,7 +49,7 @@ export function StationFrame({
     group.current.rotation.y = Math.sin(t * AMBIENT.rotate) * 0.04;
   });
 
-  if (focus < VISIBLE_THRESHOLD) return null;
+  if (focus < UNMOUNT_THRESHOLD) return null;
 
   return (
     <group ref={group} position={position}>

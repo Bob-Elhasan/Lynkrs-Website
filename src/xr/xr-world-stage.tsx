@@ -74,5 +74,5 @@ export function XrWorldStage({
     rootRef.current?.render(children);
   }, [children]);
 
-  return <div ref={containerRef} className="fixed inset-0 -z-10" aria-hidden="true" />;
+  return <div ref={containerRef} className="pointer-events-auto fixed inset-0 z-0" aria-hidden="true" />;
 }

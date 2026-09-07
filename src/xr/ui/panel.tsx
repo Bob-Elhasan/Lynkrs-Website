@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { Text } from '@react-three/drei';
 
+import { LINE_STAGGER, staggeredReveal } from '@/xr/motion';
 import { PALETTE } from '@/xr/palette';
 
 /**
@@ -13,7 +14,10 @@ import { PALETTE } from '@/xr/palette';
  * troika cannot parse woff2 — and self-hosting keeps the PWA working offline.
  *
  * A Stack lays its children out top-down using each block's declared height,
- * which keeps panels predictable without measuring text asynchronously.
+ * which keeps panels predictable without measuring text asynchronously. Each
+ * block also carries a `render(reveal)` function rather than static JSX, so
+ * Stack can drive a per-line staggered fade-in through the same `reveal`
+ * value every station computes from its own focus — see motion.ts.
  */
 
 /*
@@ -58,10 +62,23 @@ function estimateLines(text: string, fontSize: number, maxWidth: number): number
   return Math.max(1, Math.ceil(text.length / perLine));
 }
 
-type Block = { node: React.ReactNode; height: number };
+type Block = { render: (reveal: number) => React.ReactNode; height: number };
 
-/** Stacks blocks downward from y=0, with a consistent gap. */
-export function Stack({ blocks, gap = 0.28 }: { blocks: Block[]; gap?: number }) {
+/**
+ * Stacks blocks downward from y=0, with a consistent gap, and fades each one
+ * in on its own delay as `reveal` climbs from 0 to 1.
+ */
+export function Stack({
+  blocks,
+  reveal,
+  gap = 0.28,
+  staggerDelay = LINE_STAGGER,
+}: {
+  blocks: Block[];
+  reveal: number;
+  gap?: number;
+  staggerDelay?: number;
+}) {
   // Offsets are computed up front rather than accumulated inside the map:
   // reassigning a captured variable mid-render is exactly what the React
   // Compiler cannot reason about, and it trips react-hooks/immutability.
@@ -74,7 +91,7 @@ export function Stack({ blocks, gap = 0.28 }: { blocks: Block[]; gap?: number })
     <group>
       {blocks.map((block, i) => (
         <group key={i} position={[0, offsets[i], 0]}>
-          {block.node}
+          {block.render(staggeredReveal(reveal, i, staggerDelay))}
         </group>
       ))}
     </group>
@@ -84,7 +101,7 @@ export function Stack({ blocks, gap = 0.28 }: { blocks: Block[]; gap?: number })
 export function eyebrow(text: string, width = WIDTH): Block {
   return {
     height: SIZE.eyebrow * 1.2,
-    node: (
+    render: (reveal) => (
       <Text
         font={FONT_BODY}
         fontSize={SIZE.eyebrow}
@@ -93,6 +110,7 @@ export function eyebrow(text: string, width = WIDTH): Block {
         anchorX="left"
         anchorY="top"
         maxWidth={width}
+        fillOpacity={reveal}
       >
         {text.toUpperCase()}
       </Text>
@@ -108,7 +126,7 @@ export function headline(
   const lines = estimateLines(text, size, width);
   return {
     height: lines * size * 1.12,
-    node: (
+    render: (reveal) => (
       <Text
         font={FONT_DISPLAY}
         fontSize={size}
@@ -117,6 +135,7 @@ export function headline(
         anchorX="left"
         anchorY="top"
         maxWidth={width}
+        fillOpacity={reveal}
       >
         {text}
       </Text>
@@ -129,7 +148,7 @@ export function body(text: string, width = WIDTH, dim = false): Block {
   const lines = estimateLines(text, size, width);
   return {
     height: lines * size * 1.5,
-    node: (
+    render: (reveal) => (
       <Text
         font={FONT_BODY}
         fontSize={size}
@@ -138,6 +157,7 @@ export function body(text: string, width = WIDTH, dim = false): Block {
         anchorX="left"
         anchorY="top"
         maxWidth={width}
+        fillOpacity={reveal}
       >
         {text}
       </Text>
@@ -150,7 +170,7 @@ export function stamp(text: string, width = WIDTH): Block {
   const lines = estimateLines(text, size, width);
   return {
     height: lines * size * 1.3,
-    node: (
+    render: (reveal) => (
       <Text
         font={FONT_DISPLAY}
         fontSize={size}
@@ -159,6 +179,7 @@ export function stamp(text: string, width = WIDTH): Block {
         anchorX="left"
         anchorY="top"
         maxWidth={width}
+        fillOpacity={reveal}
       >
         {text}
       </Text>
@@ -181,7 +202,7 @@ export function numbered(
       titleLines * SIZE.itemTitle * 1.25 +
       bodyLines * SIZE.itemBody * 1.5 +
       (text ? 0.14 : 0),
-    node: (
+    render: (reveal) => (
       <group>
         <Text
           font={FONT_BODY}
@@ -189,6 +210,7 @@ export function numbered(
           color={PALETTE.blueBright}
           anchorX="left"
           anchorY="top"
+          fillOpacity={reveal}
         >
           {number}
         </Text>
@@ -201,6 +223,7 @@ export function numbered(
             anchorX="left"
             anchorY="top"
             maxWidth={width - indent}
+            fillOpacity={reveal}
           >
             {title}
           </Text>
@@ -214,6 +237,7 @@ export function numbered(
               anchorY="top"
               maxWidth={width - indent}
               position={[0, -titleLines * SIZE.itemTitle * 1.3, 0]}
+              fillOpacity={reveal}
             >
               {text}
             </Text>
@@ -229,10 +253,12 @@ export function Surface({
   width,
   height,
   padding = 0.34,
+  reveal = 1,
 }: {
   width: number;
   height: number;
   padding?: number;
+  reveal?: number;
 }) {
   const geometry = useMemo<[number, number]>(
     () => [width + padding * 2, height + padding * 2],
@@ -241,7 +267,7 @@ export function Surface({
   return (
     <mesh position={[width / 2 - padding / 2, -height / 2 + padding / 2, -0.05]}>
       <planeGeometry args={geometry} />
-      <meshBasicMaterial color={PALETTE.navy} transparent opacity={0.68} />
+      <meshBasicMaterial color={PALETTE.navy} transparent opacity={0.68 * reveal} />
     </mesh>
   );
 }

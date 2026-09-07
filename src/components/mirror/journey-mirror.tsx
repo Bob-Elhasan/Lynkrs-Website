@@ -6,6 +6,7 @@ import { method } from '@/content/method';
 import { services, servicesIndex } from '@/content/services';
 import { ctas } from '@/content/site';
 import { Lede, MirrorSection, NumberedList, Prose, Stamp } from '@/components/mirror/primitives';
+import { MagneticCta } from '@/components/layout/magnetic-cta';
 import { Button } from '@/components/ui/button';
 
 /**
@@ -27,9 +28,11 @@ export function JourneyMirror() {
           {arrival.subhead}
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
-          <Button asChild size="lg" className="h-11 px-5">
-            <Link to={ctas.primary.href}>{ctas.primary.label}</Link>
-          </Button>
+          <MagneticCta>
+            <Button asChild size="lg" className="h-11 px-5">
+              <Link to={ctas.primary.href}>{ctas.primary.label}</Link>
+            </Button>
+          </MagneticCta>
           <Button asChild variant="outline" size="lg" className="h-11 px-5">
             <Link to={ctas.secondary.href}>{ctas.secondary.label}</Link>
           </Button>
@@ -131,9 +134,11 @@ export function JourneyMirror() {
         </h2>
         <Prose>{closing.body}</Prose>
         <div className="mt-8 flex flex-wrap gap-3">
-          <Button asChild size="lg" className="h-11 px-5">
-            <Link to={ctas.primary.href}>{ctas.primary.label}</Link>
-          </Button>
+          <MagneticCta>
+            <Button asChild size="lg" className="h-11 px-5">
+              <Link to={ctas.primary.href}>{ctas.primary.label}</Link>
+            </Button>
+          </MagneticCta>
         </div>
       </MirrorSection>
     </>

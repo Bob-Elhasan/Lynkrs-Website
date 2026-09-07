@@ -5,6 +5,8 @@ import { useTheme } from 'next-themes';
 import { Link, NavLink } from 'react-router-dom';
 
 import { Logo } from '@/components/layout/logo';
+import { MagneticCta } from '@/components/layout/magnetic-cta';
+import { Spotlight } from '@/components/motion-primitives/spotlight';
 import { Button } from '@/components/ui/button';
 import { mainNav } from '@/content/site';
 import { cn } from '@/lib/utils';
@@ -50,7 +52,7 @@ export function SiteHeader() {
   return (
     <header
       className={cn(
-        'sticky top-0 z-50 w-full transition-all duration-300',
+        'pointer-events-auto sticky top-0 z-50 w-full transition-all duration-300',
         scrolled
           ? 'border-border bg-background/80 border-b backdrop-blur-xl'
           : 'border-b border-transparent',
@@ -61,7 +63,8 @@ export function SiteHeader() {
           <Logo />
         </Link>
 
-        <nav className="hidden items-center gap-1 md:flex" aria-label="Main">
+        <nav className="relative hidden items-center gap-1 md:flex" aria-label="Main">
+          <Spotlight size={140} />
           {mainNav.map((item) => (
             <NavLink
               key={item.href}
@@ -82,9 +85,11 @@ export function SiteHeader() {
 
         <div className="flex items-center gap-1.5">
           <ThemeToggle />
-          <Button asChild size="lg" className="hidden md:inline-flex">
-            <Link to="/contact">Book a walkthrough</Link>
-          </Button>
+          <MagneticCta className="hidden md:inline-flex">
+            <Button asChild size="lg">
+              <Link to="/contact">Book a walkthrough</Link>
+            </Button>
+          </MagneticCta>
           <Button
             variant="ghost"
             size="icon"
