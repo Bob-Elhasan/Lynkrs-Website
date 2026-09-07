@@ -1,35 +1,90 @@
 import { useState, type FormEvent } from 'react';
-import { ArrowRight, CheckCircle2 } from 'lucide-react';
 
+import { MirrorSection, Prose } from '@/components/mirror/primitives';
 import { Seo } from '@/components/seo';
-import { Section } from '@/components/sections/section';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { siteConfig } from '@/lib/site';
+import { closing } from '@/content/journey';
+import { siteConfig } from '@/content/site';
 
 type Status = 'idle' | 'submitting' | 'sent' | 'error';
 
+const OBJECTIVES = [
+  'More qualified leads',
+  'Lower cost per customer',
+  'Grow organic revenue',
+  'Fix the plan first',
+  'Something else',
+];
+
+const BUDGETS = [
+  'Under $5k / month',
+  '$5k – $15k / month',
+  '$15k – $50k / month',
+  'Over $50k / month',
+  'Not sure yet',
+];
+
+const CHANNELS = ['Paid media', 'SEO', 'Content and social', 'CRM and automation', 'None yet'];
+
+/**
+ * The lead capture form.
+ *
+ * Deliberately plain DOM rather than spatial UI: leads are the business
+ * outcome, so capture must survive a failed WebGL context, work with password
+ * managers and autofill, and be reachable by keyboard and screen reader.
+ *
+ * Validation uses native constraints plus a submit-time check, so the browser
+ * does the heavy lifting and there is no form library to ship. Six fields do
+ * not justify one; revisit if this grows past a dozen.
+ */
 export default function ContactPage() {
   const [status, setStatus] = useState<Status>('idle');
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
-  /**
-   * There is no backend yet. This posts to whatever endpoint you point
-   * VITE_CONTACT_ENDPOINT at (Formspree, a worker, your own API) and falls back
-   * to a mailto handoff when that variable is unset, so the form is never a
-   * dead end in production.
-   */
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
     const data = new FormData(form);
+
+    // Honeypot: real people never fill a hidden field.
+    if (data.get('company_website_confirm')) {
+      setStatus('sent');
+      return;
+    }
+
+    const nextErrors: Record<string, string> = {};
+    if (!String(data.get('name') ?? '').trim()) nextErrors.name = 'Tell us your name.';
+    const email = String(data.get('email') ?? '').trim();
+    if (!email) nextErrors.email = 'We need an email to reply to.';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+      nextErrors.email = 'That email does not look right.';
+    if (!String(data.get('message') ?? '').trim())
+      nextErrors.message = 'A line or two about what you are aiming at.';
+
+    setErrors(nextErrors);
+    if (Object.keys(nextErrors).length > 0) return;
+
     const endpoint = import.meta.env.VITE_CONTACT_ENDPOINT;
 
+    // With no endpoint configured the form hands off to email rather than
+    // silently dropping an enquiry.
     if (!endpoint) {
-      const subject = encodeURIComponent(`Walkthrough request — ${data.get('name')}`);
+      const subject = encodeURIComponent(`Growth audit — ${data.get('name')}`);
       const body = encodeURIComponent(
-        `Name: ${data.get('name')}\nEmail: ${data.get('email')}\nCompany: ${data.get('company')}\n\n${data.get('message')}`,
+        [
+          `Name: ${data.get('name')}`,
+          `Email: ${email}`,
+          `Company: ${data.get('company')}`,
+          `Website: ${data.get('website')}`,
+          `Objective: ${data.get('objective')}`,
+          `Budget: ${data.get('budget')}`,
+          `Channels: ${data.getAll('channels').join(', ')}`,
+          '',
+          String(data.get('message')),
+        ].join('\n'),
       );
       window.location.href = `mailto:${siteConfig.email}?subject=${subject}&body=${body}`;
       return;
@@ -52,84 +107,139 @@ export default function ContactPage() {
 
   return (
     <>
-      <Seo
-        title="Contact"
-        path="/contact"
-        description="Book a walkthrough. Bring one brand or the whole house and we will map the spine on the call."
-      />
+      <Seo title="Start a conversation" path="/contact" description={closing.body} />
 
-      <Section className="pt-16 sm:pt-20">
-        <div className="grid gap-14 lg:grid-cols-[0.9fr_1.1fr]">
-          <div>
-            <p className="text-primary text-xs font-semibold tracking-[0.18em] uppercase">
-              Contact
+      <MirrorSection className="pt-24 pb-8">
+        <p className="text-brand-gold text-xs font-semibold tracking-[0.22em] uppercase">
+          {closing.eyebrow}
+        </p>
+        <h1 className="font-display mt-4 text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
+          {closing.headline}
+        </h1>
+        <Prose>{closing.body}</Prose>
+      </MirrorSection>
+
+      <MirrorSection className="pt-0">
+        {status === 'sent' ? (
+          <div className="border-brand/40 bg-brand/10 rounded-xl border p-8">
+            <h2 className="font-display text-2xl font-semibold tracking-tight">Got it.</h2>
+            <p className="text-muted-foreground mt-2">
+              We will come back to you within one working day.
             </p>
-            <h1 className="mt-3 text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
-              Let us map your spine
-            </h1>
-            <p className="text-muted-foreground mt-5 text-lg leading-relaxed text-pretty">
-              Thirty minutes. Bring your current plan and your last month of numbers. You will leave
-              with a clear read on where the two disagree, whether or not you work with us.
-            </p>
-            <a
-              href={`mailto:${siteConfig.email}`}
-              className="text-muted-foreground hover:text-foreground mt-6 inline-block text-sm underline underline-offset-4 transition-colors"
-            >
-              {siteConfig.email}
-            </a>
           </div>
+        ) : (
+          <form onSubmit={handleSubmit} noValidate className="grid max-w-2xl gap-6">
+            <Field id="name" label="Your name" error={errors.name}>
+              <Input id="name" name="name" autoComplete="name" required
+                aria-invalid={Boolean(errors.name)} />
+            </Field>
 
-          <div className="bg-card rounded-2xl border p-7 sm:p-8">
-            {status === 'sent' ? (
-              <div className="flex flex-col items-start gap-3 py-10">
-                <CheckCircle2 className="text-primary size-8" />
-                <h2 className="text-xl font-semibold tracking-tight">Got it</h2>
-                <p className="text-muted-foreground text-sm leading-relaxed">
-                  We will come back to you within one business day.
-                </p>
+            <Field id="email" label="Work email" error={errors.email}>
+              <Input id="email" name="email" type="email" autoComplete="email" required
+                aria-invalid={Boolean(errors.email)} />
+            </Field>
+
+            <div className="grid gap-6 sm:grid-cols-2">
+              <Field id="company" label="Company">
+                <Input id="company" name="company" autoComplete="organization" />
+              </Field>
+              <Field id="website" label="Website">
+                <Input id="website" name="website" inputMode="url" placeholder="lynkrs.com" />
+              </Field>
+            </div>
+
+            <Field id="objective" label="What are you aiming at?">
+              <select
+                id="objective"
+                name="objective"
+                defaultValue={OBJECTIVES[0]}
+                className="border-input bg-background focus-visible:border-ring focus-visible:ring-ring/50 h-9 w-full rounded-lg border px-3 text-sm focus-visible:ring-3 focus-visible:outline-none"
+              >
+                {OBJECTIVES.map((option) => (
+                  <option key={option}>{option}</option>
+                ))}
+              </select>
+            </Field>
+
+            <Field id="budget" label="Monthly marketing budget">
+              <select
+                id="budget"
+                name="budget"
+                defaultValue={BUDGETS[4]}
+                className="border-input bg-background focus-visible:border-ring focus-visible:ring-ring/50 h-9 w-full rounded-lg border px-3 text-sm focus-visible:ring-3 focus-visible:outline-none"
+              >
+                {BUDGETS.map((option) => (
+                  <option key={option}>{option}</option>
+                ))}
+              </select>
+            </Field>
+
+            <fieldset>
+              <legend className="text-sm font-medium">What is running today?</legend>
+              <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2">
+                {CHANNELS.map((channel) => (
+                  <label key={channel} className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      name="channels"
+                      value={channel}
+                      className="accent-primary size-4"
+                    />
+                    {channel}
+                  </label>
+                ))}
               </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="grid gap-5">
-                <div className="grid gap-2">
-                  <Label htmlFor="name">Name</Label>
-                  <Input id="name" name="name" required autoComplete="name" />
-                </div>
+            </fieldset>
 
-                <div className="grid gap-2">
-                  <Label htmlFor="email">Work email</Label>
-                  <Input id="email" name="email" type="email" required autoComplete="email" />
-                </div>
+            <Field id="message" label="What are you trying to fix?" error={errors.message}>
+              <Textarea id="message" name="message" rows={5} required
+                aria-invalid={Boolean(errors.message)} />
+            </Field>
 
-                <div className="grid gap-2">
-                  <Label htmlFor="company">Company</Label>
-                  <Input id="company" name="company" autoComplete="organization" />
-                </div>
+            {/* Honeypot. Hidden from people, irresistible to bots. */}
+            <div aria-hidden="true" className="absolute -left-[9999px]">
+              <label htmlFor="company_website_confirm">Leave this empty</label>
+              <input id="company_website_confirm" name="company_website_confirm" tabIndex={-1}
+                autoComplete="off" />
+            </div>
 
-                <div className="grid gap-2">
-                  <Label htmlFor="message">What are you trying to connect?</Label>
-                  <Textarea id="message" name="message" rows={5} required />
-                </div>
+            {status === 'error' ? (
+              <p role="alert" className="text-destructive text-sm">
+                That did not go through. Try again, or email {siteConfig.email} directly.
+              </p>
+            ) : null}
 
-                {status === 'error' ? (
-                  <p className="text-destructive text-sm" role="alert">
-                    That did not go through. Try again, or email us directly.
-                  </p>
-                ) : null}
-
-                <Button
-                  type="submit"
-                  size="lg"
-                  className="h-11 w-full text-[0.95rem]"
-                  disabled={status === 'submitting'}
-                >
-                  {status === 'submitting' ? 'Sending…' : 'Book a walkthrough'}
-                  {status === 'submitting' ? null : <ArrowRight />}
-                </Button>
-              </form>
-            )}
-          </div>
-        </div>
-      </Section>
+            <Button type="submit" size="lg" className="h-11 w-full sm:w-auto sm:px-8"
+              disabled={status === 'submitting'}>
+              {status === 'submitting' ? 'Sending…' : 'Book a growth audit'}
+            </Button>
+          </form>
+        )}
+      </MirrorSection>
     </>
+  );
+}
+
+function Field({
+  id,
+  label,
+  error,
+  children,
+}: {
+  id: string;
+  label: string;
+  error?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="grid gap-2">
+      <Label htmlFor={id}>{label}</Label>
+      {children}
+      {error ? (
+        <p id={`${id}-error`} role="alert" className="text-destructive text-sm">
+          {error}
+        </p>
+      ) : null}
+    </div>
   );
 }

@@ -13,12 +13,22 @@ export type TextMorphProps = {
 
 export function TextMorph({
   children,
-  as: Component = 'p',
+  as = 'p',
   className,
   style,
   variants,
   transition,
 }: TextMorphProps) {
+  // React Three Fiber widens React.ElementType with every three.js element, so
+  // a bare ElementType collapses the prop intersection to `never`. Narrowing to
+  // the props this component actually passes keeps the `as` escape hatch usable.
+  const Component = as as React.ElementType<{
+    className?: string;
+    'aria-label'?: string;
+    style?: React.CSSProperties;
+    children?: React.ReactNode;
+  }>;
+
   const uniqueId = useId();
 
   const characters = useMemo(() => {

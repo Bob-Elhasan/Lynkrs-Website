@@ -1,8 +1,7 @@
-import { lazy, Suspense } from 'react';
-import { Route, Routes } from 'react-router-dom';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { Route, Routes, StaticRouter } from 'react-router-dom';
 
 import { RootLayout } from '@/components/layout/root-layout';
-import { ThemeProvider } from '@/components/theme-provider';
 import BundlesPage from '@/pages/bundles';
 import CaseStudyPage from '@/pages/case-study';
 import ContactPage from '@/pages/contact';
@@ -11,24 +10,34 @@ import NotFoundPage from '@/pages/not-found';
 import PortfolioPage from '@/pages/portfolio';
 import ServiceDetailPage from '@/pages/services/detail';
 import ServicesIndexPage from '@/pages/services/index';
+import { caseStudies } from '@/content/portfolio';
+import { services } from '@/content/services';
 
 /**
- * The 3D corridor is lazy so the DOM shell paints first and the WebGL bundle
- * never blocks first contentful paint. On a device that cannot run it, the
- * chunk is still fetched but the Stage renders nothing and the DOM mirror
- * simply stays visible.
+ * Build-time prerender.
+ *
+ * The live site renders to a WebGL canvas, which no crawler and no screen
+ * reader can read. This emits the DOM mirror as real HTML into every route's
+ * index.html so the content exists before a single byte of JavaScript runs.
+ *
+ * The 3D stage is deliberately absent here — it needs a browser, and the whole
+ * point of this pass is the readable copy underneath it.
  */
-const JourneyStage = lazy(() =>
-  import('@/xr/journey-stage').then((m) => ({ default: m.JourneyStage })),
-);
 
-export default function App() {
-  return (
-    <ThemeProvider>
-      <Suspense fallback={null}>
-        <JourneyStage />
-      </Suspense>
+export const routes: string[] = [
+  '/',
+  '/services',
+  ...services.map((s) => `/services/${s.slug}`),
+  '/bundles',
+  '/portfolio',
+  ...caseStudies.map((c) => `/portfolio/${c.slug}`),
+  '/contact',
+  '/404',
+];
 
+export function render(pathname: string): string {
+  return renderToStaticMarkup(
+    <StaticRouter location={pathname}>
       <Routes>
         <Route element={<RootLayout />}>
           <Route index element={<HomePage />} />
@@ -41,6 +50,6 @@ export default function App() {
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>
-    </ThemeProvider>
+    </StaticRouter>,
   );
 }

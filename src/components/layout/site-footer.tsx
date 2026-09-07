@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 
 import { Logo } from '@/components/layout/logo';
-import { footerNav, siteConfig } from '@/lib/site';
+import { footerNav, siteConfig } from '@/content/site';
 
 export function SiteFooter() {
   return (

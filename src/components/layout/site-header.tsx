@@ -6,7 +6,7 @@ import { Link, NavLink } from 'react-router-dom';
 
 import { Logo } from '@/components/layout/logo';
 import { Button } from '@/components/ui/button';
-import { mainNav } from '@/lib/site';
+import { mainNav } from '@/content/site';
 import { cn } from '@/lib/utils';
 
 function ThemeToggle() {

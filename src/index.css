@@ -9,6 +9,8 @@
 @import 'tw-animate-css';
 @import './styles/vendor/shadcn-tailwind.css';
 @import '@fontsource-variable/inter';
+@import '@fontsource-variable/archivo';
+@import '@fontsource-variable/caveat';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -24,83 +26,100 @@
  */
 
 :root {
-  /* The one accent. Swap this line to rebrand. */
-  --brand: oklch(0.85 0.198 124);
-  --brand-foreground: oklch(0.16 0.01 260);
+  /* ---------------------------------------------------------------------
+   * Brand, taken from the live lynkrs.com Elementor globals.
+   *   #0D2C3E navy · #3970B6 blue · #F0F0F0 off-white · #CDCD00 gold
+   * Blue is the light source: glows, gradients and rim light all come from
+   * it. Gold is an accent and stays rare — eyebrows, rules, one CTA.
+   * ------------------------------------------------------------------- */
+  --brand: oklch(0.55 0.11 250);
+  --brand-deep: oklch(0.28 0.05 235);
+  --brand-gold: oklch(0.84 0.17 105);
+  --brand-foreground: oklch(0.98 0.005 240);
 
-  --background: oklch(0.99 0 0);
-  --foreground: oklch(0.16 0.01 260);
+  --background: oklch(0.985 0.003 240);
+  --foreground: oklch(0.22 0.02 240);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.16 0.01 260);
+  --card-foreground: oklch(0.22 0.02 240);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.16 0.01 260);
+  --popover-foreground: oklch(0.22 0.02 240);
 
   --primary: var(--brand);
   --primary-foreground: var(--brand-foreground);
-  --secondary: oklch(0.968 0.002 260);
-  --secondary-foreground: oklch(0.22 0.008 260);
-  --muted: oklch(0.968 0.002 260);
-  --muted-foreground: oklch(0.55 0.012 260);
-  --accent: oklch(0.962 0.003 260);
-  --accent-foreground: oklch(0.2 0.008 260);
+  --secondary: oklch(0.955 0.006 240);
+  --secondary-foreground: oklch(0.26 0.02 240);
+  --muted: oklch(0.955 0.006 240);
+  --muted-foreground: oklch(0.52 0.02 240);
+  --accent: oklch(0.95 0.01 240);
+  --accent-foreground: oklch(0.24 0.02 240);
   --destructive: oklch(0.58 0.22 27);
 
-  --border: oklch(0.916 0.003 260);
-  --input: oklch(0.916 0.003 260);
-  --ring: oklch(0.7 0.01 260);
+  --border: oklch(0.9 0.008 240);
+  --input: oklch(0.9 0.008 240);
+  --ring: var(--brand);
 
   --chart-1: var(--brand);
-  --chart-2: oklch(0.65 0.18 250);
-  --chart-3: oklch(0.72 0.16 195);
-  --chart-4: oklch(0.7 0.19 55);
-  --chart-5: oklch(0.6 0.2 310);
+  --chart-2: oklch(0.68 0.1 235);
+  --chart-3: var(--brand-gold);
+  --chart-4: oklch(0.45 0.09 255);
+  --chart-5: oklch(0.75 0.07 220);
 
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.16 0.01 260);
+  --sidebar: oklch(0.975 0.004 240);
+  --sidebar-foreground: oklch(0.22 0.02 240);
   --sidebar-primary: var(--brand);
   --sidebar-primary-foreground: var(--brand-foreground);
-  --sidebar-accent: oklch(0.962 0.003 260);
-  --sidebar-accent-foreground: oklch(0.2 0.008 260);
-  --sidebar-border: oklch(0.916 0.003 260);
-  --sidebar-ring: oklch(0.7 0.01 260);
+  --sidebar-accent: oklch(0.95 0.01 240);
+  --sidebar-accent-foreground: oklch(0.24 0.02 240);
+  --sidebar-border: oklch(0.9 0.008 240);
+  --sidebar-ring: var(--brand);
 
   --radius: 0.75rem;
+
+  /* Depth. The 3D stage and the DOM mirror share these so both read as one
+   * material system rather than two unrelated designs. */
+  --elevation-1: 0 1px 0 0 oklch(1 0 0 / 6%) inset, 0 1px 2px oklch(0 0 0 / 30%);
+  --elevation-2: 0 1px 0 0 oklch(1 0 0 / 8%) inset, 0 8px 24px -8px oklch(0 0 0 / 45%);
+  --elevation-3: 0 1px 0 0 oklch(1 0 0 / 10%) inset, 0 24px 64px -16px oklch(0 0 0 / 60%);
 }
 
 .dark {
-  --background: oklch(0.145 0.008 260);
-  --foreground: oklch(0.975 0 0);
-  --card: oklch(0.185 0.008 260);
-  --card-foreground: oklch(0.975 0 0);
-  --popover: oklch(0.185 0.008 260);
-  --popover-foreground: oklch(0.975 0 0);
+  --background: oklch(0.16 0.022 245);
+  --foreground: oklch(0.96 0.005 240);
+  --card: oklch(0.205 0.026 243);
+  --card-foreground: oklch(0.96 0.005 240);
+  --popover: oklch(0.205 0.026 243);
+  --popover-foreground: oklch(0.96 0.005 240);
 
   --primary: var(--brand);
   --primary-foreground: var(--brand-foreground);
-  --secondary: oklch(0.26 0.008 260);
-  --secondary-foreground: oklch(0.975 0 0);
-  --muted: oklch(0.24 0.008 260);
-  --muted-foreground: oklch(0.7 0.01 260);
-  --accent: oklch(0.3 0.008 260);
-  --accent-foreground: oklch(0.975 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
+  --secondary: oklch(0.26 0.03 243);
+  --secondary-foreground: oklch(0.96 0.005 240);
+  --muted: oklch(0.24 0.028 243);
+  --muted-foreground: oklch(0.72 0.02 240);
+  --accent: oklch(0.31 0.035 243);
+  --accent-foreground: oklch(0.96 0.005 240);
+  --destructive: oklch(0.7 0.19 22);
 
-  --border: oklch(1 0 0 / 11%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.55 0.01 260);
+  --border: oklch(0.99 0.02 240 / 12%);
+  --input: oklch(0.99 0.02 240 / 16%);
+  --ring: var(--brand);
 
-  --sidebar: oklch(0.185 0.008 260);
-  --sidebar-foreground: oklch(0.975 0 0);
-  --sidebar-accent: oklch(0.26 0.008 260);
-  --sidebar-accent-foreground: oklch(0.975 0 0);
-  --sidebar-border: oklch(1 0 0 / 11%);
-  --sidebar-ring: oklch(0.55 0.01 260);
+  --sidebar: oklch(0.205 0.026 243);
+  --sidebar-foreground: oklch(0.96 0.005 240);
+  --sidebar-accent: oklch(0.26 0.03 243);
+  --sidebar-accent-foreground: oklch(0.96 0.005 240);
+  --sidebar-border: oklch(0.99 0.02 240 / 12%);
+  --sidebar-ring: var(--brand);
 }
 
 @theme inline {
   --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Archivo Variable', 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-hand: 'Caveat Variable', ui-serif, cursive;
 
   --color-brand: var(--brand);
+  --color-brand-deep: var(--brand-deep);
+  --color-brand-gold: var(--brand-gold);
   --color-brand-foreground: var(--brand-foreground);
 
   --color-background: var(--background);
@@ -160,6 +179,10 @@
   html {
     @apply font-sans antialiased;
     scroll-behavior: smooth;
+    /* The header is sticky, so anything scrolled to — an anchor link, a
+     * focused field, an element scrolled into view — would land underneath it
+     * without this offset. */
+    scroll-padding-top: 5rem;
   }
 
   body {
@@ -191,4 +214,35 @@
 
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
+}
+
+/*
+ * Visually hidden, still in the accessibility tree and still indexed.
+ *
+ * Used for the DOM content mirror while the 3D corridor is on screen. Unlike
+ * `display: none` or `visibility: hidden`, this keeps the content available to
+ * screen readers and crawlers — which matters here, because the WebGL canvas
+ * is aria-hidden and this is the only readable copy of the page.
+ */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Never trap keyboard focus inside hidden content: reveal on focus-within. */
+.visually-hidden:focus-within {
+  position: static;
+  width: auto;
+  height: auto;
+  margin: 0;
+  overflow: visible;
+  clip-path: none;
+  white-space: normal;
 }

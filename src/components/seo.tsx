@@ -1,4 +1,4 @@
-import { siteConfig } from '@/lib/site';
+import { siteConfig } from '@/content/site';
 
 type SeoProps = {
   title?: string;
@@ -15,8 +15,13 @@ type SeoProps = {
 export function Seo({ title, description, path = '/', image }: SeoProps) {
   const fullTitle = title ? `${title} — ${siteConfig.name}` : `${siteConfig.name} — ${siteConfig.tagline}`;
   const desc = description ?? siteConfig.description;
-  const url = new URL(path, siteConfig.url).toString();
-  const ogImage = image ? new URL(image, siteConfig.url).toString() : undefined;
+  // siteConfig.url may carry a sub-path (GitHub Pages project sites do), and
+  // `new URL('/x', origin+'/base')` throws that base away. Join by hand.
+  const origin = siteConfig.url.replace(/\/+$/, '');
+  const url = `${origin}${path.startsWith('/') ? path : `/${path}`}`;
+  const ogImage = image
+    ? `${origin}${image.startsWith('/') ? image : `/${image}`}`
+    : `${origin}/icons/icon-512.png`;
 
   return (
     <>
@@ -29,12 +34,12 @@ export function Seo({ title, description, path = '/', image }: SeoProps) {
       <meta property="og:title" content={fullTitle} />
       <meta property="og:description" content={desc} />
       <meta property="og:url" content={url} />
-      {ogImage ? <meta property="og:image" content={ogImage} /> : null}
+      <meta property="og:image" content={ogImage} />
 
-      <meta name="twitter:card" content={ogImage ? 'summary_large_image' : 'summary'} />
+      <meta name="twitter:card" content="summary" />
       <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={desc} />
-      {ogImage ? <meta name="twitter:image" content={ogImage} /> : null}
+      <meta name="twitter:image" content={ogImage} />
     </>
   );
 }
