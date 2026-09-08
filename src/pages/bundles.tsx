@@ -1,54 +1,15 @@
+import { ArrowUpRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
-
-import { BundleCard } from '@/components/marketing/bundle-card';
-import { MagneticCta } from '@/components/layout/magnetic-cta';
-import { Reveal } from '@/components/marketing/reveal';
-import { Section, SectionHeading } from '@/components/sections/section';
 import { Seo } from '@/components/seo';
-import { Button } from '@/components/ui/button';
-import { bundles, suiteIndex } from '@/content/bundles';
-import { ctas } from '@/content/site';
+import { CheckList, PageHero, PageSection, SectionIntro, SignalCard } from '@/components/site/spatial-page';
 
-/** All four Growth Suite products on one page, in stage order. */
+const stages = [
+  { number: '01', title: 'Growth Diagnostics', quote: 'I need to know what is actually holding us back.', body: 'Uncover hidden bottlenecks early and leave with a prioritised growth roadmap.', items: ['Revenue structure map', 'SEO and content audit', 'Acquisition channel audit', 'Customer journey audit', 'Website conversion audit', '90-day growth roadmap'] },
+  { number: '02', title: 'Growth Launchpad', quote: 'I want to start this properly.', body: 'Build the rhythm, tools, and early traction needed to put the business on a growth journey.', items: ['Monthly growth strategy', 'SEO operations', 'AI-assisted content planning', 'Lead generation tactics', 'Competitor monitoring', 'KPI dashboard and reporting'] },
+  { number: '03', title: 'Growth Accelerate', quote: 'Things are working. Let us make them work harder.', body: 'Tighten the revenue funnel, improve conversion, and accelerate growth without losing control.', items: ['Funnel conversion optimisation', 'Media buying oversight', 'CRM optimisation', 'Marketing automation strategy', 'Lead nurturing programmes', 'Executive growth reporting'] },
+  { number: '04', title: 'Growth Scale', quote: 'We are ready to build the infrastructure for the next stage.', body: 'Make growth repeatable with the operating systems, tracking, automation, and team capability to scale.', items: ['CRM setup and parameters', 'Marketing automation workflows', 'Lead routing automation', 'Tracking and analytics structure', 'Team training and onboarding', 'Executive dashboards'] },
+];
+
 export default function BundlesPage() {
-  return (
-    <>
-      <Seo
-        title="The Growth Suite"
-        path="/bundles"
-        description={`${suiteIndex.lede} ${suiteIndex.body}`}
-      />
-
-      <Section className="pt-28 pb-8 sm:pt-36">
-        <Reveal>
-          <SectionHeading
-            as="h1"
-            eyebrow={`${suiteIndex.number} · ${suiteIndex.title}`}
-            title={suiteIndex.lede}
-            description={suiteIndex.body}
-          />
-        </Reveal>
-      </Section>
-
-      <Section className="pt-0">
-        <div className="grid gap-8">
-          {bundles.map((bundle, i) => (
-            <Reveal key={bundle.slug} delay={Math.min(i * 0.05, 0.15)}>
-              <BundleCard bundle={bundle} variant="full" />
-            </Reveal>
-          ))}
-        </div>
-      </Section>
-
-      <Section tone="deep" className="text-center">
-        <Reveal>
-          <MagneticCta>
-            <Button asChild size="lg" className="h-11 px-5">
-              <Link to={ctas.primary.href}>{ctas.primary.label}</Link>
-            </Button>
-          </MagneticCta>
-        </Reveal>
-      </Section>
-    </>
-  );
+  return <div className="spatial-page"><Seo title="Growth Suite" path="/bundles" description="Four integrated products for different stages of growth." /><PageHero number="05" eyebrow="The Growth Suite" title={<>Start where you are.<br /><em>Grow from there.</em></>} lede="Four integrated products designed to support different stages of growth. Each stage hands over cleanly to the next." /><PageSection tone="light"><SectionIntro eyebrow="Four stages, one system" title={<>From diagnosis<br />to <em>scale.</em></>} body="The suite gives your team the clarity, rhythm, and infrastructure needed to turn marketing spend into healthy, sustainable, scalable growth." /><div className="signal-grid signal-grid--four">{stages.map((stage) => <SignalCard key={stage.number} index={stage.number} title={stage.title} body={stage.body}><p className="quote-line">“{stage.quote}”</p><CheckList items={stage.items.slice(0, 4)} /><Link className="spatial-link" to="/contact">Talk through this stage <ArrowUpRight size={16} /></Link></SignalCard>)}</div></PageSection><PageSection tone="dark"><SectionIntro eyebrow="The point" title={<>Marketing becomes<br /><em>an investment.</em></>} body="Not a recurring expense. A connected system that learns, improves, and compounds." /></PageSection></div>;
 }

@@ -1,68 +1,16 @@
-import { Link, Navigate, useParams } from 'react-router-dom';
-
-import { NumberedSteps } from '@/components/marketing/numbered-step';
-import { Reveal } from '@/components/marketing/reveal';
-import { RevealGroup } from '@/components/marketing/reveal-group';
-import { StatMetric } from '@/components/marketing/stat-metric';
-import { Lede } from '@/components/marketing/typography';
-import { Section, SectionHeading } from '@/components/sections/section';
+import { ArrowLeft, ArrowUpRight } from 'lucide-react';
+import { Link, useParams } from 'react-router-dom';
 import { Seo } from '@/components/seo';
-import { getCaseStudy } from '@/content/portfolio';
+import { CheckList, PageHero, PageSection, SectionIntro, SignalCard } from '@/components/site/spatial-page';
+
+const chapters = [
+  { title: 'Diagnose before you deploy', body: 'Revenue structure, SEO, content, acquisition channels, customer journey, and conversion experience become one picture.' },
+  { title: 'Align the objective', body: 'One commercial goal gives the team a shared definition of progress and makes every channel accountable to the outcome.' },
+  { title: 'Execute and test', body: 'Media, content, SEO, and automation move together. Each action creates learning for the next one.' },
+  { title: 'Optimise what compounds', body: 'Short-term performance and long-term equity are treated as connected jobs, not competing priorities.' },
+];
 
 export default function CaseStudyPage() {
-  const { slug } = useParams<{ slug: string }>();
-  const study = slug ? getCaseStudy(slug) : undefined;
-
-  if (!study) return <Navigate to="/portfolio" replace />;
-
-  const approachSteps = study.approach.map((step, i) => ({ number: String(i + 1), title: step }));
-
-  return (
-    <>
-      <Seo title={study.title} path={`/portfolio/${study.slug}`} description={study.summary} />
-
-      <Section className="pt-28 pb-8 sm:pt-36">
-        <Reveal>
-          <p className="text-muted-foreground text-xs tracking-wide uppercase">
-            {study.client} · {study.sector}
-          </p>
-          <h1 className="font-display mt-4 text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
-            {study.title}
-          </h1>
-          <Lede className="mt-4">{study.summary}</Lede>
-        </Reveal>
-
-        <RevealGroup className="mt-10 grid gap-6 sm:grid-cols-3">
-          {study.metrics.map((metric) => (
-            <StatMetric key={metric.label} value={metric.value} label={metric.label} />
-          ))}
-        </RevealGroup>
-      </Section>
-
-      <Section tone="muted">
-        <Reveal>
-          <SectionHeading title="The challenge" description={study.challenge} />
-        </Reveal>
-      </Section>
-
-      <Section>
-        <Reveal>
-          <SectionHeading title="What we did" />
-        </Reveal>
-        <NumberedSteps steps={approachSteps} />
-      </Section>
-
-      <Section tone="muted">
-        <Reveal>
-          <SectionHeading title="The result" description={study.result} />
-          <Link
-            to="/portfolio"
-            className="text-brand mt-6 inline-block text-sm underline underline-offset-4"
-          >
-            Back to portfolio
-          </Link>
-        </Reveal>
-      </Section>
-    </>
-  );
+  const { slug = 'growth-system' } = useParams();
+  return <div className="spatial-page"><Seo title="Growth system in practice" path={`/portfolio/${slug}`} description="A closer look at the Lynkrs growth-system approach." /><PageHero number="08" eyebrow="Growth system in practice" title={<>Make the next move<br /><em>make sense.</em></>} lede="A useful case study should show the decisions, not just the decoration. Here is the operating model behind a Lynkrs engagement." /><PageSection tone="light"><Link className="back-link" to="/portfolio"><ArrowLeft size={16} /> Back to perspective</Link><SectionIntro eyebrow="The operating model" title={<>Structured.<br /><em>Measurable.</em><br />Scalable.</>} body="The job is to remove fragmentation and replace it with a connected system where learning is continuous and accountability is clear." /><div className="signal-grid signal-grid--four">{chapters.map((chapter, index) => <SignalCard key={chapter.title} index={`0${index + 1}`} title={chapter.title} body={chapter.body} />)}</div></PageSection><PageSection tone="dark"><div className="split-callout"><div><div className="section-kicker"><span>✦</span><span>The outcome</span></div><h2 className="spatial-section-title">Marketing that earns its keep.</h2></div><div><CheckList items={['Predictable performance', 'Continuous learning', 'Clear accountability', 'Scalable growth infrastructure']} /><Link className="spatial-link" to="/contact">Discuss your system <ArrowUpRight size={16} /></Link></div></div></PageSection></div>;
 }

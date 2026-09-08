@@ -1,66 +1,14 @@
-import { TriangleAlert } from 'lucide-react';
-
-import { CaseStudyCard } from '@/components/marketing/case-study-card';
-import { Reveal } from '@/components/marketing/reveal';
-import { RevealGroup } from '@/components/marketing/reveal-group';
-import { Lede, Prose } from '@/components/marketing/typography';
-import { Section, SectionHeading } from '@/components/sections/section';
+import { ArrowUpRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { Seo } from '@/components/seo';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Card } from '@/components/ui/card';
-import { caseStudies, clients, portfolioIndex, portfolioIsPlaceholder } from '@/content/portfolio';
+import { PageHero, PageSection, SectionIntro, SignalCard } from '@/components/site/spatial-page';
+
+const perspectives = [
+  { number: '01', title: 'Find the leak', body: 'Map the revenue structure, customer journey, channels, and conversion experience before adding more activity.' },
+  { number: '02', title: 'Connect the levers', body: 'Give strategy, media, content, and SEO one shared objective so every channel makes the next one smarter.' },
+  { number: '03', title: 'Make learning visible', body: 'Use reporting as a decision tool: what changed, what worked, what we learned, and what to do next.' },
+];
 
 export default function PortfolioPage() {
-  return (
-    <>
-      <Seo title="Portfolio" path="/portfolio" description={portfolioIndex.lede} />
-
-      <Section className="pt-28 pb-8 sm:pt-36">
-        <Reveal>
-          <h1 className="font-display text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
-            {portfolioIndex.title}
-          </h1>
-          <Lede className="mt-4">{portfolioIndex.lede}</Lede>
-          <Prose>{portfolioIndex.body}</Prose>
-          {portfolioIsPlaceholder ? (
-            <Alert className="border-brand-gold/40 bg-brand-gold/10 mt-6 max-w-2xl">
-              <TriangleAlert className="text-brand-gold" />
-              <AlertTitle className="text-brand-gold">Running on placeholder data</AlertTitle>
-              <AlertDescription>
-                Replace the entries in <code className="mx-1">src/content/portfolio.ts</code> with
-                real clients and results before launch.
-              </AlertDescription>
-            </Alert>
-          ) : null}
-        </Reveal>
-      </Section>
-
-      <Section tone="muted">
-        <Reveal>
-          <SectionHeading title="Clients" />
-        </Reveal>
-        <RevealGroup className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
-          {clients.map((client) => (
-            <Card
-              key={client}
-              className="text-muted-foreground flex min-h-16 items-center justify-center px-4 text-center text-sm"
-            >
-              {client}
-            </Card>
-          ))}
-        </RevealGroup>
-      </Section>
-
-      <Section>
-        <Reveal>
-          <SectionHeading title="Case studies" />
-        </Reveal>
-        <RevealGroup className="mt-8 grid gap-6 md:grid-cols-3">
-          {caseStudies.map((study) => (
-            <CaseStudyCard key={study.slug} study={study} />
-          ))}
-        </RevealGroup>
-      </Section>
-    </>
-  );
+  return <div className="spatial-page"><Seo title="How growth gets built" path="/portfolio" description="The Lynkrs operating perspective on structured, measurable and scalable growth." /><PageHero number="07" eyebrow="How growth gets built" title={<>Less <em>noise.</em><br />More signal.</>} lede="We do not invent success stories or hide behind vanity metrics. We show the operating logic behind growth and build the system with you." /><PageSection tone="light"><SectionIntro eyebrow="Our working lens" title={<>Every engagement starts<br />with <em>clarity.</em></>} body="The work is designed to move from diagnosis to decisions, from decisions to action, and from action to measurable learning." /><div className="signal-grid">{perspectives.map((item) => <SignalCard key={item.number} index={item.number} title={item.title} body={item.body} />)}</div></PageSection><PageSection tone="yellow"><SectionIntro eyebrow="Want the real version?" title={<>Bring us the messy<br /><em>version.</em></>} body="The best work starts before the case study. It starts with an honest look at what is happening now." /><Link className="round-cta round-cta--blue" to="/contact"><span>Start a<br />conversation</span><ArrowUpRight size={20} /></Link></PageSection></div>;
 }

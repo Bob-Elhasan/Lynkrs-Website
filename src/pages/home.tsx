@@ -1,23 +1,24 @@
 import { useEffect, useState } from 'react';
 import { ArrowDownRight, ArrowUpRight, Menu, MoveUpRight, Plus, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { Logo } from '@/components/layout/logo';
 import { Seo } from '@/components/seo';
 import { siteConfig } from '@/content/site';
 
 const pillars = [
-  { number: '01', title: 'Find the signal', text: 'We make the messy picture useful. Clear diagnosis, sharper priorities, no theatre.' },
-  { number: '02', title: 'Build the system', text: 'Strategy, creative and distribution work together instead of fighting for attention.' },
-  { number: '03', title: 'Make it compound', text: 'Every move leaves the next one in a better place. That is how growth earns its keep.' },
+  { number: '01', title: 'Diagnose the system', text: 'We make the messy picture useful: revenue structure, customer journey, channels, and conversion in one view.' },
+  { number: '02', title: 'Connect the levers', text: 'Strategy, media, content, and SEO work together under one commercial objective.' },
+  { number: '03', title: 'Scale what learns', text: 'Every move leaves the next one in a better place. Performance becomes a compounding advantage.' },
 ];
 
 const services = [
-  { label: 'Strategy', detail: 'Direction for the next right move.' },
-  { label: 'Brand & web', detail: 'A presence people remember.' },
-  { label: 'Growth systems', detail: 'The engine behind consistent demand.' },
+  { label: 'Performance', detail: 'Paid media that earns its place.' },
+  { label: 'Content & brand', detail: 'Demand, trust, and conversion connected.' },
+  { label: 'SEO revenue', detail: 'Organic growth that compounds.' },
 ];
 
 function BrandMark({ light = false }: { light?: boolean }) {
-  return <img src="/lynkrs-logo.png" alt="Lynkrs" className={`brand-mark-image ${light ? 'brand-mark-image--light' : ''}`} />;
+  return <Logo light={light} className="brand-mark-image" />;
 }
 
 export default function HomePage() {
@@ -54,9 +55,9 @@ export default function HomePage() {
             <div className="hero-orbit hero-orbit--one" />
             <div className="hero-orbit hero-orbit--two" />
             <div className="hero-copy">
-              <p className="eyebrow eyebrow--dark"><span>01</span> Independent growth studio</p>
-              <h1>Make the<br /><em>next move</em><br />matter.</h1>
-              <p className="hero-summary">Lynkrs joins the dots between brand, business and demand — so your best work gets the attention it deserves.</p>
+              <p className="eyebrow eyebrow--dark"><span>01</span> Performance-led growth agency</p>
+              <h1>Turn motion<br />into <em>momentum.</em></h1>
+              <p className="hero-summary">Lynkrs connects strategy, media, content, and SEO into one measurable system — so marketing becomes a business driver.</p>
               <Link className="round-cta" to="/contact"><span>Start a<br />conversation</span><ArrowDownRight size={20} /></Link>
             </div>
             <div className="hero-side-note"><span>Scroll to explore</span><ArrowDownRight size={17} /></div>
@@ -67,8 +68,8 @@ export default function HomePage() {
           <section id="approach" className="manifesto-section">
             <div className="section-kicker"><span>(02)</span><span>What we believe</span></div>
             <div className="manifesto-grid">
-              <h2>Good growth<br /><span>feels obvious</span><br />in hindsight.</h2>
-              <div className="manifesto-copy"><p>We help ambitious teams turn a point of view into a presence, and a presence into momentum.</p><p>Not more noise. A clear idea, made tangible, then put to work.</p><Link className="text-link" to="/services">See how we work <ArrowUpRight size={15} /></Link></div>
+              <h2>Growth is not<br /><span>guessed.</span><br />It is designed.</h2>
+              <div className="manifesto-copy"><p>Most brands do not struggle because they lack activity. They struggle because their efforts are fragmented.</p><p>We eliminate the fragmentation and make performance predictable, learning continuous, and spend scalable.</p><Link className="text-link" to="/services">See how we work <ArrowUpRight size={15} /></Link></div>
             </div>
             <div className="pillars-grid">{pillars.map((pillar) => <article key={pillar.number} className="pillar-card"><span>{pillar.number}</span><h3>{pillar.title}</h3><p>{pillar.text}</p><Plus size={18} /></article>)}</div>
           </section>

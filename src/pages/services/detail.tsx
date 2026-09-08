@@ -1,97 +1,17 @@
-import { CircleCheck } from 'lucide-react';
-import { Link, Navigate, useParams } from 'react-router-dom';
-
-import { ServiceCard } from '@/components/marketing/service-card';
-import { ServiceIcon } from '@/components/marketing/service-icon';
-import { Reveal } from '@/components/marketing/reveal';
-import { RevealGroup } from '@/components/marketing/reveal-group';
-import { Lede, Stamp } from '@/components/marketing/typography';
-import { Section, SectionHeading } from '@/components/sections/section';
+import { ArrowLeft, ArrowUpRight } from 'lucide-react';
+import { Link, useParams } from 'react-router-dom';
 import { Seo } from '@/components/seo';
-import { Button } from '@/components/ui/button';
-import { getService, services } from '@/content/services';
-import { ctas } from '@/content/site';
+import { CheckList, PageHero, PageSection, SectionIntro, SignalCard } from '@/components/site/spatial-page';
 
-/** One layout renders every service page, driven entirely by content data. */
+const content: Record<string, { title: string; lede: string; outcome: string; deliver: string[]; fit: string[] }> = {
+  performance: { title: 'Performance & media buying', lede: 'Paid media is only useful when it becomes predictable revenue.', outcome: 'Measurable revenue growth through scalable, high-efficiency paid media execution.', deliver: ['Paid media strategy and execution', 'Funnel and conversion optimisation', 'Creative testing and iteration', 'Budget efficiency and scaling logic', 'Continuous performance optimisation'], fit: ['You are spending, but learning slowly', 'CAC is rising without a clear reason', 'Channels are optimised in isolation'] },
+  content: { title: 'Content & brand', lede: 'Content should earn its place as a performance asset, not just fill a calendar.', outcome: 'Lower acquisition costs and stronger paid-channel efficiency through brand-driven content that converts.', deliver: ['Content storytelling framework', 'Visual and written content production', 'Community engagement and growth', 'Content performance analysis', 'Social media strategy and planning'], fit: ['Your content is active but disconnected', 'The brand is not helping conversion', 'Creative decisions are not linked to performance'] },
+  seo: { title: 'SEO revenue system', lede: 'Organic visibility should compound into revenue, not stop at traffic.', outcome: 'Higher conversion rates, reduced costs, and long-term profitability independent of paid spend.', deliver: ['Technical SEO and UX optimisation', 'Keyword and search-intent strategy', 'Content and on-page optimisation', 'Authority building and backlinks', 'Revenue projection and SEO tracking'], fit: ['SEO reporting is full of traffic metrics', 'Organic growth is hard to connect to revenue', 'You want a durable acquisition engine'] },
+  consultancy: { title: 'Marketing consultancy', lede: 'When the problem is the plan, senior thinking changes the shape of the work.', outcome: 'A clear read on where growth is leaking, a prioritised plan, and senior ownership of the next decision.', deliver: ['Executive growth guidance', 'Channel and funnel diagnosis', 'KPI and reporting alignment', 'Growth roadmap design', 'Team enablement and accountability'], fit: ['You need a senior marketing lead without a full-time hire', 'Reporting fills pages and settles nothing', 'The team needs one shared objective'] },
+};
+
 export default function ServiceDetailPage() {
-  const { slug } = useParams<{ slug: string }>();
-  const service = slug ? getService(slug) : undefined;
-
-  if (!service) return <Navigate to="/services" replace />;
-
-  const others = services.filter((s) => s.slug !== service.slug);
-
-  return (
-    <>
-      <Seo
-        title={service.name}
-        path={`/services/${service.slug}`}
-        description={`${service.lede} ${service.emphasis}`}
-      />
-
-      <Section className="pt-28 pb-8 sm:pt-36">
-        <Reveal>
-          <ServiceIcon slug={service.slug} className="text-brand size-8" />
-          <p className="text-brand-gold mt-4 text-xs font-semibold tracking-[0.22em] uppercase">
-            {service.code}
-          </p>
-          <h1 className="font-display mt-4 text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
-            {service.name}
-          </h1>
-          <Lede className="mt-4">{service.lede}</Lede>
-          <Stamp>{service.emphasis}</Stamp>
-        </Reveal>
-      </Section>
-
-      <Section tone="muted">
-        <Reveal>
-          <SectionHeading title="What this involves" description={service.detail.intro} />
-        </Reveal>
-        <ul className="mt-8 grid gap-4 sm:grid-cols-2">
-          {service.deliverables.map((d) => (
-            <li key={d.number} className="flex items-start gap-3">
-              <CircleCheck className="text-brand mt-0.5 size-5 shrink-0" aria-hidden="true" />
-              <span className="font-medium tracking-tight">{d.title}</span>
-            </li>
-          ))}
-        </ul>
-      </Section>
-
-      <Section>
-        <Reveal>
-          <SectionHeading title="What you get out of it" description={service.detail.outcome} />
-        </Reveal>
-      </Section>
-
-      <Section tone="muted">
-        <Reveal>
-          <SectionHeading title="This is for you if" />
-          <ul className="mt-6 space-y-3">
-            {service.detail.forYouIf.map((line) => (
-              <li key={line} className="flex items-start gap-3">
-                <CircleCheck className="text-brand mt-0.5 size-5 shrink-0" aria-hidden="true" />
-                <span className="text-muted-foreground">{line}</span>
-              </li>
-            ))}
-          </ul>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Button asChild size="lg" className="h-11 px-5">
-              <Link to={ctas.primary.href}>{ctas.primary.label}</Link>
-            </Button>
-          </div>
-        </Reveal>
-      </Section>
-
-      <Section>
-        <Reveal>
-          <SectionHeading title="The other modules" />
-        </Reveal>
-        <RevealGroup className="mt-8 grid gap-4 sm:grid-cols-3">
-          {others.map((other) => (
-            <ServiceCard key={other.slug} service={other} variant="compact" />
-          ))}
-        </RevealGroup>
-      </Section>
-    </>
-  );
+  const { slug = 'performance' } = useParams();
+  const item = content[slug] ?? content.performance;
+  return <div className="spatial-page"><Seo title={item.title} path={`/services/${slug}`} description={item.lede} /><PageHero number="06" eyebrow="Growth module" title={<>{item.title.split(' & ')[0]}<br /><em>{item.title.includes(' & ') ? `& ${item.title.split(' & ')[1]}` : ''}</em></>} lede={item.lede} /><PageSection tone="light"><Link className="back-link" to="/services"><ArrowLeft size={16} /> All modules</Link><div className="detail-grid"><div><SectionIntro eyebrow="What it delivers" title={<>Make the work<br /><em>work harder.</em></>} body={item.outcome} /></div><div className="detail-panel"><CheckList items={item.deliver} /><Link className="spatial-link" to="/contact">Talk through your situation <ArrowUpRight size={16} /></Link></div></div></PageSection><PageSection tone="yellow"><SectionIntro eyebrow="This is for you if" title={<>The current system<br />is leaving <em>money</em> on the table.</>} /><div className="signal-grid">{item.fit.map((fit, index) => <SignalCard key={fit} index={`0${index + 1}`} title={fit} body="We will help you turn that friction into a clear decision and a practical next step." />)}</div></PageSection></div>;
 }
