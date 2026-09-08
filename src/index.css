@@ -216,52 +216,6 @@
   display: none;
 }
 
-/*
- * Visually hidden, still in the accessibility tree and still indexed.
- *
- * Used for the DOM content mirror while the 3D corridor is on screen. Unlike
- * `display: none` or `visibility: hidden`, this keeps the content available to
- * screen readers and crawlers — which matters here, because the WebGL canvas
- * is aria-hidden and this is the only readable copy of the page.
- */
-.visually-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  padding: 0;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-  border: 0;
-}
-
-/* Never trap keyboard focus inside hidden content: reveal on focus-within. */
-.visually-hidden:focus-within {
-  position: static;
-  width: auto;
-  height: auto;
-  margin: 0;
-  overflow: visible;
-  clip-path: none;
-  white-space: normal;
-}
-
-/*
- * The 3D canvas is a fixed, full-viewport layer that sits behind the DOM
- * chrome purely by paint order (it mounts first in App.tsx; stage.tsx keeps
- * it at z-0, not a negative z-index — a negative z-index paints, and
- * hit-tests, *behind* normal in-flow boxes within the same stacking
- * context, including #root's own layer, which made every pointer event in
- * the canvas dead on arrival). With plain DOM order that risk is gone, but
- * #root staying pointer-events:none costs nothing and is one less thing to
- * get wrong if the layering ever changes — each real interactive region
- * opts back in explicitly (site-header.tsx, root-layout.tsx's main/footer,
- * stage.tsx's canvas and its "Enter in VR" button).
- */
-#root {
-  pointer-events: none;
-}
 /* Lynkrs editorial landing system */
 :root { --lynkrs-orange: #ee3f12; --lynkrs-ink: #18201c; --lynkrs-cream: #f4f0e8; --lynkrs-lime: #d9f04a; --lynkrs-line: rgba(24,32,28,.18); }
 .lynkrs-home { background: var(--lynkrs-cream); color: var(--lynkrs-ink); overflow: hidden; }
