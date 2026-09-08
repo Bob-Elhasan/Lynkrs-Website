@@ -17,7 +17,7 @@ const services = [
 ];
 
 function BrandMark({ light = false }: { light?: boolean }) {
-  return <span className={`brand-mark ${light ? 'brand-mark--light' : ''}`} aria-hidden="true">///</span>;
+  return <img src="/lynkrs-logo.png" alt="Lynkrs" className={`brand-mark-image ${light ? 'brand-mark-image--light' : ''}`} />;
 }
 
 export default function HomePage() {
@@ -39,7 +39,7 @@ export default function HomePage() {
         </div>
 
         <header className="lynkrs-nav">
-          <Link to="/" className="nav-logo" aria-label="Lynkrs home"><BrandMark /><span>Lynkrs<span className="nav-dot">.</span></span></Link>
+          <Link to="/" className="nav-logo" aria-label="Lynkrs home"><BrandMark /></Link>
           <nav className={menuOpen ? 'nav-links nav-links--open' : 'nav-links'} aria-label="Primary navigation">
             <a href="#approach" onClick={() => setMenuOpen(false)}>Approach</a>
             <a href="#services" onClick={() => setMenuOpen(false)}>Services</a>

@@ -32,10 +32,10 @@
    * Blue is the light source: glows, gradients and rim light all come from
    * it. Gold is an accent and stays rare — eyebrows, rules, one CTA.
    * ------------------------------------------------------------------- */
-  --brand: oklch(0.55 0.11 250);
-  --brand-deep: oklch(0.28 0.05 235);
-  --brand-gold: oklch(0.84 0.17 105);
-  --brand-foreground: oklch(0.98 0.005 240);
+  --brand: #3c76c0;
+  --brand-deep: #cdcd00;
+  --brand-gold: #cdcd00;
+  --brand-foreground: #ffffff;
 
   --background: oklch(0.985 0.003 240);
   --foreground: oklch(0.22 0.02 240);
@@ -113,8 +113,8 @@
 }
 
 @theme inline {
-  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --font-display: 'Archivo Variable', 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Poppins', 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Poppins', 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
   --font-hand: 'Caveat Variable', ui-serif, cursive;
 
   --color-brand: var(--brand);
@@ -217,7 +217,7 @@
 }
 
 /* Lynkrs editorial landing system */
-:root { --lynkrs-orange: #ee3f12; --lynkrs-ink: #18201c; --lynkrs-cream: #f4f0e8; --lynkrs-lime: #d9f04a; --lynkrs-line: rgba(24,32,28,.18); }
+:root { --lynkrs-orange: #cdcd00; --lynkrs-ink: #183253; --lynkrs-cream: #f7f8fb; --lynkrs-lime: #3c76c0; --lynkrs-line: rgba(24,50,83,.18); }
 .lynkrs-home { background: var(--lynkrs-cream); color: var(--lynkrs-ink); overflow: hidden; }
 .lynkrs-home a { color: inherit; text-decoration: none; }
 .brand-mark { display: inline-block; font-family: Arial, sans-serif; font-size: 1rem; font-weight: 900; letter-spacing: -0.28em; line-height: .75; transform: skew(-10deg); }
@@ -294,3 +294,27 @@
 .closing-section h2 em { color: var(--lynkrs-lime); }
 .closing-link { margin-top: 2.5rem; }
 @media (max-width: 700px) { .nav-links { position: absolute; top: 4.2rem; right: 1rem; left: 1rem; display: none; flex-direction: column; align-items: stretch; gap: 0; padding: .5rem; background: var(--lynkrs-cream); box-shadow: 0 12px 30px rgba(24,32,28,.12); } .nav-links--open { display: flex; } .nav-links a { padding: .9rem; } .nav-menu { display: flex; } .hero-copy h1 { font-size: clamp(4rem, 18vw, 7rem); } .hero-summary { margin-left: 0; max-width: 17rem; } .round-cta { margin-left: auto; margin-right: 5%; } .hero-side-note { display: none; } .hero-orbit--one { width: 125vw; height: 125vw; right: -65vw; top: 21%; } .hero-orbit--two { width: 72vw; height: 72vw; right: -12vw; bottom: 19%; } .hero-footer { display: none; } .hero-stamp { right: 1.3rem; bottom: 1.5rem; } .manifesto-grid, .work-intro { grid-template-columns: 1fr; gap: 2rem; } .manifesto-grid h2, .services-heading h2, .work-intro h2 { font-size: clamp(3.8rem, 17vw, 6rem); } .pillars-grid, .work-cards { grid-template-columns: 1fr; } .pillar-card { min-height: 12rem; } .pillar-card h3 { margin-top: 2.6rem; } .services-heading { display: block; } .services-heading p { margin-top: 2rem; } .services-list { margin-top: 4rem; } .service-row { grid-template-columns: 2rem 1fr 1.2rem; } .service-row p { display: none; } .services-orbit { position: relative; right: auto; top: auto; width: 9rem; height: 9rem; margin: 4rem 0 0 auto; font-size: 1rem; } .work-cards { margin-top: 4rem; } .work-card { min-height: 20rem; } .closing-section { min-height: 35rem; } .closing-section h2 { margin-top: 10rem; font-size: clamp(4rem, 18vw, 7rem); } .closing-bottom { right: 1.15rem; left: 1.15rem; font-size: .58rem; } }
+
+/* Shared Lynkrs identity: human, spatial, and quietly kinetic. */
+.logo-image { display: block; width: 8.75rem; height: auto; object-fit: contain; }
+.brand-mark-image { display: block; width: clamp(4.8rem, 11vw, 8.5rem); height: auto; object-fit: contain; }
+.brand-mark-image--light { filter: brightness(0) invert(1); }
+.site-shell--inner main { position: relative; isolation: isolate; }
+.site-shell--inner main::before { content: ''; position: fixed; z-index: -1; top: 12%; right: -10rem; width: 24rem; height: 24rem; border: 1px solid color-mix(in srgb, var(--brand) 20%, transparent); border-radius: 50%; pointer-events: none; animation: lynkrs-orbit 18s linear infinite; }
+.site-shell--inner main::after { content: ''; position: fixed; z-index: -1; bottom: 6%; left: -9rem; width: 18rem; height: 18rem; border: 1px solid color-mix(in srgb, var(--brand-gold) 35%, transparent); border-radius: 50%; pointer-events: none; animation: lynkrs-orbit-reverse 23s linear infinite; }
+.site-shell--inner main > section { position: relative; overflow: hidden; }
+.site-shell--inner main > section::after { content: ''; position: absolute; top: 12%; right: 5%; width: 3.5rem; height: 3.5rem; border: 1px solid color-mix(in srgb, var(--brand) 32%, transparent); border-radius: 50%; opacity: .65; pointer-events: none; transition: transform .35s var(--ease-out); }
+.site-shell--inner main > section:hover::after { transform: translate(-.6rem, .4rem) scale(1.18); }
+.site-shell--inner .rounded-xl, .site-shell--inner .rounded-2xl, .site-shell--inner [class*='shadow-'] { transition: transform .28s var(--ease-out), box-shadow .28s var(--ease-out), border-color .28s ease; }
+.site-shell--inner .rounded-xl:hover, .site-shell--inner .rounded-2xl:hover { transform: translateY(-4px); box-shadow: 0 18px 45px -24px color-mix(in srgb, var(--brand) 42%, transparent); }
+.site-shell--inner button, .site-shell--inner a[class*='rounded'] { transition: transform .18s var(--ease-out), background-color .18s ease, color .18s ease; }
+.site-shell--inner button:active, .site-shell--inner a[class*='rounded']:active { transform: scale(.97); }
+.site-shell--inner h1, .site-shell--inner h2, .site-shell--inner h3 { letter-spacing: -.045em; }
+.site-shell--inner .text-brand-gold { color: var(--brand-gold); }
+.site-shell--inner .bg-brand-deep { background: var(--brand-deep); color: var(--brand-foreground); }
+.site-shell--inner .border-brand\/40 { border-color: color-mix(in srgb, var(--brand) 40%, transparent); }
+.site-shell--inner .bg-brand\/10 { background: color-mix(in srgb, var(--brand) 10%, transparent); }
+@keyframes lynkrs-orbit { from { transform: rotate(0deg) translateX(0); } 50% { transform: rotate(180deg) translateX(1.2rem); } to { transform: rotate(360deg) translateX(0); } }
+@keyframes lynkrs-orbit-reverse { from { transform: rotate(360deg) translateX(0); } 50% { transform: rotate(180deg) translateX(-.8rem); } to { transform: rotate(0deg) translateX(0); } }
+@media (prefers-reduced-motion: reduce) { .site-shell--inner main::before, .site-shell--inner main::after { animation: none; } }
+@media (max-width: 700px) { .logo-image { width: 7rem; } .site-shell--inner main::before { width: 15rem; height: 15rem; right: -8rem; } .site-shell--inner main::after { width: 11rem; height: 11rem; left: -7rem; } }

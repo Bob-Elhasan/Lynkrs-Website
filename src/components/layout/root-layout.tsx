@@ -1,17 +1,10 @@
 import { useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
-
 import { SiteFooter } from '@/components/layout/site-footer';
 import { SiteHeader } from '@/components/layout/site-header';
+import { cn } from '@/lib/utils';
 
-/**
- * Scroll to top on route change, or to the target section for a hash link.
- *
- * React Router's client-side navigation only updates history — unlike a full
- * page load, it never scrolls the browser to a URL's #fragment on its own.
- * Without this, every hash link in the footer (/#problem, /#method,
- * /#together) would silently do nothing when clicked from inside the app.
- */
+/** Scroll to top on route change, or to the target section for a hash link. */
 function ScrollToTop() {
   const { pathname, hash } = useLocation();
   useEffect(() => {
@@ -27,26 +20,22 @@ function ScrollToTop() {
 export function RootLayout() {
   const { pathname } = useLocation();
   const isHome = pathname.replace(/\/+$/, '') === '';
-
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className={cn('site-shell pointer-events-none flex min-h-dvh flex-col', isHome ? 'site-shell--home' : 'site-shell--inner')}>
       <ScrollToTop />
       <a
         href="#main"
-        className="bg-primary text-primary-foreground focus:ring-ring sr-only rounded-md px-4 py-2 text-sm font-medium focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:ring-2"
+        className="bg-primary text-primary-foreground focus:ring-ring pointer-events-auto sr-only rounded-md px-4 py-2 text-sm font-medium focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:ring-2"
       >
         Skip to content
       </a>
-
-      {/* The new home page ships its own nav and closing section, so the
-       * shared header/footer only render on every other route. */}
       {!isHome && <SiteHeader />}
-
-      <main id="main" className="flex-1">
+      <main id="main" className="pointer-events-auto flex-1" data-mirror="visible">
         <Outlet />
       </main>
-
-      {!isHome && <SiteFooter />}
+      <div className="pointer-events-auto">
+        {!isHome && <SiteFooter />}
+      </div>
     </div>
   );
 }
