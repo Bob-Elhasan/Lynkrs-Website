@@ -24,9 +24,13 @@ function BrandMark({ light = false }: { light?: boolean }) {
 export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [navScrolled, setNavScrolled] = useState(false);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setLoading(false), 1450);
+    const onScroll = () => setNavScrolled(window.scrollY > 96);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
     const root = document.documentElement;
     root.classList.add('lynkrs-motion-ready');
     const sections = Array.from(document.querySelectorAll<HTMLElement>('.lynkrs-home main > section'));
@@ -44,6 +48,7 @@ export default function HomePage() {
     hero?.addEventListener('pointermove', onPointer);
     return () => {
       window.clearTimeout(timer);
+      window.removeEventListener('scroll', onScroll);
       observer.disconnect();
       hero?.removeEventListener('pointermove', onPointer);
       root.classList.remove('lynkrs-motion-ready');
@@ -59,7 +64,7 @@ export default function HomePage() {
           <div className="loading-bottom"><span>LYNKRS / 2026</span><strong>100%</strong></div>
         </div>
 
-        <header className="lynkrs-nav">
+        <header className={`lynkrs-nav ${navScrolled ? 'lynkrs-nav--scrolled' : ''}`}>
           <Link to="/" className="nav-logo" aria-label="Lynkrs home"><BrandMark /></Link>
           <nav className={menuOpen ? 'nav-links nav-links--open' : 'nav-links'} aria-label="Primary navigation">
             <a href="#approach" onClick={() => setMenuOpen(false)}>Approach</a>

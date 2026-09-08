@@ -35,7 +35,7 @@ export function SiteHeader() {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8);
+    const onScroll = () => setScrolled(window.scrollY > 96);
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
@@ -50,20 +50,13 @@ export function SiteHeader() {
   }, [open]);
 
   return (
-    <header
-      className={cn(
-        'sticky top-0 z-50 w-full transition-all duration-300',
-        scrolled
-          ? 'border-border bg-background/80 border-b backdrop-blur-xl'
-          : 'border-b border-transparent',
-      )}
-    >
-      <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-5 lg:px-8">
+    <header className={cn('site-header', scrolled && 'site-header--scrolled')}>
+      <div className="site-header__inner mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-5 lg:px-8">
         <Link to="/" className="rounded-md" aria-label="Lynkrs home">
           <Logo />
         </Link>
 
-        <nav className="relative hidden items-center gap-1 md:flex" aria-label="Main">
+        <nav className="site-header__nav relative hidden items-center gap-1 md:flex" aria-label="Main">
           <Spotlight size={140} />
           {mainNav.map((item) => (
             <NavLink
@@ -108,7 +101,7 @@ export function SiteHeader() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="border-border bg-background/95 border-b backdrop-blur-xl md:hidden"
+            className="site-header__mobile border-border bg-background/95 border-b backdrop-blur-xl md:hidden"
           >
             <nav className="mx-auto flex max-w-6xl flex-col gap-1 px-5 pb-5" aria-label="Mobile">
               {mainNav.map((item) => (

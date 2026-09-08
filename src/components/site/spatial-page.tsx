@@ -1,6 +1,6 @@
 import { type CSSProperties, type ReactNode, useEffect, useRef, useState } from 'react';
 import { ArrowUpRight, Check, MoveUpRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Reveal } from '@/components/marketing/reveal';
 import { Logo } from '@/components/layout/logo';
 import { cn } from '@/lib/utils';
@@ -56,8 +56,10 @@ export function SpatialField({ className }: { className?: string }) {
 
 export function PageHero({ number, eyebrow, title, lede, accent = 'dark' }: { number: string; eyebrow: string; title: ReactNode; lede: string; accent?: 'dark' | 'yellow' }) {
   const { ref, isVisible } = useSpatialMotion();
+  const { pathname } = useLocation();
+  const page = pathname.includes('services') ? 'services' : pathname.includes('bundles') ? 'bundles' : pathname.includes('portfolio') ? 'portfolio' : pathname.includes('contact') ? 'contact' : 'default';
   return (
-    <section ref={ref} className={cn('spatial-page-hero', isVisible && 'is-visible', accent === 'yellow' ? 'spatial-page-hero--yellow' : 'spatial-page-hero--dark')}>
+    <section ref={ref} className={cn('spatial-page-hero', `spatial-page-hero--${page}`, isVisible && 'is-visible', accent === 'yellow' ? 'spatial-page-hero--yellow' : 'spatial-page-hero--dark')}>
       <SpatialField />
       <div className="spatial-page-hero__inner">
         <div className="section-kicker"><span>{number}</span><span>{eyebrow}</span></div>
@@ -91,7 +93,7 @@ export function CheckList({ items }: { items: string[] }) {
 }
 
 export function LogoFooter() {
-  return <footer className="spatial-footer"><Logo /><p>Growth is not guessed. It is designed.</p><span>© {new Date().getFullYear()} Lynkrs</span></footer>;
+  return <footer className="spatial-footer"><Logo /><p><span>Growth is not guessed.</span><span>It is designed.</span></p><span>© {new Date().getFullYear()} Lynkrs</span></footer>;
 }
 
 export const pageShellStyle = { '--surface-accent': '#3c76c0' } as CSSProperties;

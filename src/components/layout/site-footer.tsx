@@ -7,7 +7,7 @@ export function SiteFooter() {
     <footer className="spatial-footer site-footer-modern">
       <div className="site-footer-modern__lead">
         <Logo />
-        <p>Growth is not guessed. It is designed.</p>
+        <p><span>Growth is not guessed.</span><span>It is designed.</span></p>
         <a href={`mailto:${siteConfig.email}`}>{siteConfig.email}</a>
       </div>
       <div className="site-footer-modern__nav">
