@@ -13,16 +13,6 @@ function manualChunks(id: string) {
   const reactVendor = ['react', 'react-dom', 'react-router', 'react-router-dom'];
   if (reactVendor.some((pkg) => id.includes(`/node_modules/${pkg}/`))) return 'react-vendor';
 
-  // The 3D stack is deliberately NOT grouped into a manual chunk.
-  //
-  // IWSDK pulls in roughly 6.9MB of three.js addons that only the immersive
-  // path needs. Naming a shared "three-vendor" chunk forces those into the
-  // bundle every flat-browser visitor downloads — measured at 6.1MB gzipped
-  // versus 556kB when Rollup is left to split along the dynamic import
-  // boundary instead. So three, @react-three, @pmndrs, @iwsdk and friends all
-  // fall through to automatic splitting.
-  return undefined;
-
   const uiVendor = ['radix-ui', '@radix-ui', '@base-ui', 'motion', 'lucide-react', '@hugeicons'];
   if (uiVendor.some((pkg) => id.includes(`/node_modules/${pkg}`))) return 'ui-vendor';
 
@@ -60,24 +50,13 @@ export default defineConfig({
         ],
       },
       workbox: {
-        // Precache the shell only. The 3D chunk and its assets are large and
-        // most visits never enter the corridor deeply enough to need all of
-        // them, so they are cached on demand instead of up front.
-        globPatterns: ['**/*.{css,html,svg,ico,woff2}', '**/index-*.js', '**/react-vendor-*.js'],
+        globPatterns: ['**/*.{css,html,svg,ico,woff2}', '**/*.js'],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         navigateFallback: `${BASE}index.html`,
         cleanupOutdatedCaches: true,
         runtimeCaching: [
           {
-            urlPattern: /\/assets\/(three-vendor|ui-vendor)-[^/]+\.js$/,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'lynkrs-3d',
-              expiration: { maxEntries: 12, maxAgeSeconds: 60 * 60 * 24 * 30 },
-            },
-          },
-          {
-            urlPattern: /\.(?:glb|gltf|ktx2|bin|wasm|png|jpg|webp)$/,
+            urlPattern: /\.(?:png|jpg|webp)$/,
             handler: 'CacheFirst',
             options: {
               cacheName: 'lynkrs-assets',

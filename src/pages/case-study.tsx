@@ -1,6 +1,11 @@
 import { Link, Navigate, useParams } from 'react-router-dom';
 
-import { Lede, MirrorSection, Prose } from '@/components/mirror/primitives';
+import { NumberedSteps } from '@/components/marketing/numbered-step';
+import { Reveal } from '@/components/marketing/reveal';
+import { RevealGroup } from '@/components/marketing/reveal-group';
+import { StatMetric } from '@/components/marketing/stat-metric';
+import { Lede } from '@/components/marketing/typography';
+import { Section, SectionHeading } from '@/components/sections/section';
 import { Seo } from '@/components/seo';
 import { getCaseStudy } from '@/content/portfolio';
 
@@ -10,59 +15,54 @@ export default function CaseStudyPage() {
 
   if (!study) return <Navigate to="/portfolio" replace />;
 
+  const approachSteps = study.approach.map((step, i) => ({ number: String(i + 1), title: step }));
+
   return (
     <>
       <Seo title={study.title} path={`/portfolio/${study.slug}`} description={study.summary} />
 
-      <MirrorSection className="pt-24 pb-8">
-        <p className="text-muted-foreground text-xs tracking-wide uppercase">
-          {study.client} · {study.sector}
-        </p>
-        <h1 className="font-display mt-4 text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
-          {study.title}
-        </h1>
-        <Lede>{study.summary}</Lede>
+      <Section className="pt-28 pb-8 sm:pt-36">
+        <Reveal>
+          <p className="text-muted-foreground text-xs tracking-wide uppercase">
+            {study.client} · {study.sector}
+          </p>
+          <h1 className="font-display mt-4 text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
+            {study.title}
+          </h1>
+          <Lede className="mt-4">{study.summary}</Lede>
+        </Reveal>
 
-        <dl className="mt-10 grid gap-6 sm:grid-cols-3">
+        <RevealGroup className="mt-10 grid gap-6 sm:grid-cols-3">
           {study.metrics.map((metric) => (
-            <div key={metric.label} className="border-border/70 border-t pt-4">
-              <dt className="sr-only">{metric.label}</dt>
-              <dd>
-                <span className="font-display block text-4xl font-semibold tabular-nums">
-                  {metric.value}
-                </span>
-                <span className="text-muted-foreground mt-1 block text-sm">{metric.label}</span>
-              </dd>
-            </div>
+            <StatMetric key={metric.label} value={metric.value} label={metric.label} />
           ))}
-        </dl>
-      </MirrorSection>
+        </RevealGroup>
+      </Section>
 
-      <MirrorSection title="The challenge">
-        <Prose>{study.challenge}</Prose>
-      </MirrorSection>
+      <Section tone="muted">
+        <Reveal>
+          <SectionHeading title="The challenge" description={study.challenge} />
+        </Reveal>
+      </Section>
 
-      <MirrorSection title="What we did">
-        <ol className="mt-2 space-y-3">
-          {study.approach.map((step, i) => (
-            <li key={step} className="border-border/70 border-t pt-3">
-              <span className="text-brand mr-3 text-xs font-semibold tabular-nums">
-                {String(i + 1).padStart(2, '0')}
-              </span>
-              {step}
-            </li>
-          ))}
-        </ol>
-      </MirrorSection>
+      <Section>
+        <Reveal>
+          <SectionHeading title="What we did" />
+        </Reveal>
+        <NumberedSteps steps={approachSteps} />
+      </Section>
 
-      <MirrorSection title="The result">
-        <Lede>{study.result}</Lede>
-        <p className="mt-8">
-          <Link to="/portfolio" className="text-brand text-sm underline underline-offset-4">
+      <Section tone="muted">
+        <Reveal>
+          <SectionHeading title="The result" description={study.result} />
+          <Link
+            to="/portfolio"
+            className="text-brand mt-6 inline-block text-sm underline underline-offset-4"
+          >
             Back to portfolio
           </Link>
-        </p>
-      </MirrorSection>
+        </Reveal>
+      </Section>
     </>
   );
 }

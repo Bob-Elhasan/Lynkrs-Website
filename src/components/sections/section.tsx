@@ -2,21 +2,27 @@ import type { ReactNode } from 'react';
 
 import { cn } from '@/lib/utils';
 
+const TONE = {
+  default: '',
+  muted: 'bg-muted/40',
+  deep: 'bg-brand-deep text-brand-foreground',
+} as const;
+
 /** Shared page-section shell so vertical rhythm stays consistent site-wide. */
 export function Section({
   children,
   className,
   id,
+  tone = 'default',
 }: {
   children: ReactNode;
   className?: string;
   id?: string;
+  /** Alternates section background weight so the page doesn't read as one flat rhythm. */
+  tone?: keyof typeof TONE;
 }) {
   return (
-    <section
-      id={id}
-      className={cn('pt-20 pb-20 sm:pt-28 sm:pb-28', className)}
-    >
+    <section id={id} className={cn('pt-20 pb-20 sm:pt-28 sm:pb-28', TONE[tone], className)}>
       <div className="mx-auto w-full max-w-6xl px-5 lg:px-8">{children}</div>
     </section>
   );

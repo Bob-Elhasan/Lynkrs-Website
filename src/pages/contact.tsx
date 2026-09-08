@@ -1,9 +1,12 @@
 import { useState, type FormEvent } from 'react';
 
-import { MirrorSection, Prose } from '@/components/mirror/primitives';
 import { MagneticCta } from '@/components/layout/magnetic-cta';
+import { Reveal } from '@/components/marketing/reveal';
+import { Prose } from '@/components/marketing/typography';
+import { Section } from '@/components/sections/section';
 import { Seo } from '@/components/seo';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -110,115 +113,145 @@ export default function ContactPage() {
     <>
       <Seo title="Start a conversation" path="/contact" description={closing.body} />
 
-      <MirrorSection className="pt-24 pb-8">
-        <p className="text-brand-gold text-xs font-semibold tracking-[0.22em] uppercase">
-          {closing.eyebrow}
-        </p>
-        <h1 className="font-display mt-4 text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
-          {closing.headline}
-        </h1>
-        <Prose>{closing.body}</Prose>
-      </MirrorSection>
+      <Section className="pt-28 pb-8 sm:pt-36">
+        <Reveal>
+          <p className="text-brand-gold text-xs font-semibold tracking-[0.22em] uppercase">
+            {closing.eyebrow}
+          </p>
+          <h1 className="font-display mt-4 text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
+            {closing.headline}
+          </h1>
+          <Prose>{closing.body}</Prose>
+        </Reveal>
+      </Section>
 
-      <MirrorSection className="pt-0">
+      <Section className="pt-0">
         {status === 'sent' ? (
-          <div className="border-brand/40 bg-brand/10 rounded-xl border p-8">
+          <Card className="border-brand/40 bg-brand/10 max-w-2xl p-8">
             <h2 className="font-display text-2xl font-semibold tracking-tight">Got it.</h2>
             <p className="text-muted-foreground mt-2">
               We will come back to you within one working day.
             </p>
-          </div>
+          </Card>
         ) : (
-          <form onSubmit={handleSubmit} noValidate className="grid max-w-2xl gap-6">
-            <Field id="name" label="Your name" error={errors.name}>
-              <Input id="name" name="name" autoComplete="name" required
-                aria-invalid={Boolean(errors.name)} />
-            </Field>
+          <Card className="max-w-2xl shadow-[var(--elevation-2)]">
+            <CardContent>
+              <form onSubmit={handleSubmit} noValidate className="grid gap-6">
+                <Field id="name" label="Your name" error={errors.name}>
+                  <Input
+                    id="name"
+                    name="name"
+                    autoComplete="name"
+                    required
+                    aria-invalid={Boolean(errors.name)}
+                  />
+                </Field>
 
-            <Field id="email" label="Work email" error={errors.email}>
-              <Input id="email" name="email" type="email" autoComplete="email" required
-                aria-invalid={Boolean(errors.email)} />
-            </Field>
+                <Field id="email" label="Work email" error={errors.email}>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    aria-invalid={Boolean(errors.email)}
+                  />
+                </Field>
 
-            <div className="grid gap-6 sm:grid-cols-2">
-              <Field id="company" label="Company">
-                <Input id="company" name="company" autoComplete="organization" />
-              </Field>
-              <Field id="website" label="Website">
-                <Input id="website" name="website" inputMode="url" placeholder="lynkrs.com" />
-              </Field>
-            </div>
+                <div className="grid gap-6 sm:grid-cols-2">
+                  <Field id="company" label="Company">
+                    <Input id="company" name="company" autoComplete="organization" />
+                  </Field>
+                  <Field id="website" label="Website">
+                    <Input id="website" name="website" inputMode="url" placeholder="lynkrs.com" />
+                  </Field>
+                </div>
 
-            <Field id="objective" label="What are you aiming at?">
-              <select
-                id="objective"
-                name="objective"
-                defaultValue={OBJECTIVES[0]}
-                className="border-input bg-background focus-visible:border-ring focus-visible:ring-ring/50 h-9 w-full rounded-lg border px-3 text-sm focus-visible:ring-3 focus-visible:outline-none"
-              >
-                {OBJECTIVES.map((option) => (
-                  <option key={option}>{option}</option>
-                ))}
-              </select>
-            </Field>
+                <Field id="objective" label="What are you aiming at?">
+                  <select
+                    id="objective"
+                    name="objective"
+                    defaultValue={OBJECTIVES[0]}
+                    className="border-input bg-background focus-visible:border-ring focus-visible:ring-ring/50 h-9 w-full rounded-lg border px-3 text-sm focus-visible:ring-3 focus-visible:outline-none"
+                  >
+                    {OBJECTIVES.map((option) => (
+                      <option key={option}>{option}</option>
+                    ))}
+                  </select>
+                </Field>
 
-            <Field id="budget" label="Monthly marketing budget">
-              <select
-                id="budget"
-                name="budget"
-                defaultValue={BUDGETS[4]}
-                className="border-input bg-background focus-visible:border-ring focus-visible:ring-ring/50 h-9 w-full rounded-lg border px-3 text-sm focus-visible:ring-3 focus-visible:outline-none"
-              >
-                {BUDGETS.map((option) => (
-                  <option key={option}>{option}</option>
-                ))}
-              </select>
-            </Field>
+                <Field id="budget" label="Monthly marketing budget">
+                  <select
+                    id="budget"
+                    name="budget"
+                    defaultValue={BUDGETS[4]}
+                    className="border-input bg-background focus-visible:border-ring focus-visible:ring-ring/50 h-9 w-full rounded-lg border px-3 text-sm focus-visible:ring-3 focus-visible:outline-none"
+                  >
+                    {BUDGETS.map((option) => (
+                      <option key={option}>{option}</option>
+                    ))}
+                  </select>
+                </Field>
 
-            <fieldset>
-              <legend className="text-sm font-medium">What is running today?</legend>
-              <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2">
-                {CHANNELS.map((channel) => (
-                  <label key={channel} className="flex items-center gap-2 text-sm">
-                    <input
-                      type="checkbox"
-                      name="channels"
-                      value={channel}
-                      className="accent-primary size-4"
-                    />
-                    {channel}
-                  </label>
-                ))}
-              </div>
-            </fieldset>
+                <fieldset>
+                  <legend className="text-sm font-medium">What is running today?</legend>
+                  <div className="mt-3 flex flex-wrap gap-x-6 gap-y-2">
+                    {CHANNELS.map((channel) => (
+                      <label key={channel} className="flex items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          name="channels"
+                          value={channel}
+                          className="accent-primary size-4"
+                        />
+                        {channel}
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
 
-            <Field id="message" label="What are you trying to fix?" error={errors.message}>
-              <Textarea id="message" name="message" rows={5} required
-                aria-invalid={Boolean(errors.message)} />
-            </Field>
+                <Field id="message" label="What are you trying to fix?" error={errors.message}>
+                  <Textarea
+                    id="message"
+                    name="message"
+                    rows={5}
+                    required
+                    aria-invalid={Boolean(errors.message)}
+                  />
+                </Field>
 
-            {/* Honeypot. Hidden from people, irresistible to bots. */}
-            <div aria-hidden="true" className="absolute -left-[9999px]">
-              <label htmlFor="company_website_confirm">Leave this empty</label>
-              <input id="company_website_confirm" name="company_website_confirm" tabIndex={-1}
-                autoComplete="off" />
-            </div>
+                {/* Honeypot. Hidden from people, irresistible to bots. */}
+                <div aria-hidden="true" className="absolute -left-[9999px]">
+                  <label htmlFor="company_website_confirm">Leave this empty</label>
+                  <input
+                    id="company_website_confirm"
+                    name="company_website_confirm"
+                    tabIndex={-1}
+                    autoComplete="off"
+                  />
+                </div>
 
-            {status === 'error' ? (
-              <p role="alert" className="text-destructive text-sm">
-                That did not go through. Try again, or email {siteConfig.email} directly.
-              </p>
-            ) : null}
+                {status === 'error' ? (
+                  <p role="alert" className="text-destructive text-sm">
+                    That did not go through. Try again, or email {siteConfig.email} directly.
+                  </p>
+                ) : null}
 
-            <MagneticCta className="w-full sm:w-auto">
-              <Button type="submit" size="lg" className="h-11 w-full sm:w-auto sm:px-8"
-                disabled={status === 'submitting'}>
-                {status === 'submitting' ? 'Sending…' : 'Book a growth audit'}
-              </Button>
-            </MagneticCta>
-          </form>
+                <MagneticCta className="w-full sm:w-auto">
+                  <Button
+                    type="submit"
+                    size="lg"
+                    className="h-11 w-full sm:w-auto sm:px-8"
+                    disabled={status === 'submitting'}
+                  >
+                    {status === 'submitting' ? 'Sending…' : 'Book a growth audit'}
+                  </Button>
+                </MagneticCta>
+              </form>
+            </CardContent>
+          </Card>
         )}
-      </MirrorSection>
+      </Section>
     </>
   );
 }

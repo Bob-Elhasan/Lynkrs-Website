@@ -1,8 +1,13 @@
-import { Link } from 'react-router-dom';
+import { TriangleAlert } from 'lucide-react';
 
-import { Lede, MirrorSection, Prose } from '@/components/mirror/primitives';
+import { CaseStudyCard } from '@/components/marketing/case-study-card';
+import { Reveal } from '@/components/marketing/reveal';
+import { RevealGroup } from '@/components/marketing/reveal-group';
+import { Lede, Prose } from '@/components/marketing/typography';
+import { Section, SectionHeading } from '@/components/sections/section';
 import { Seo } from '@/components/seo';
-import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Card } from '@/components/ui/card';
 import { caseStudies, clients, portfolioIndex, portfolioIsPlaceholder } from '@/content/portfolio';
 
 export default function PortfolioPage() {
@@ -10,63 +15,52 @@ export default function PortfolioPage() {
     <>
       <Seo title="Portfolio" path="/portfolio" description={portfolioIndex.lede} />
 
-      <MirrorSection className="pt-24 pb-8">
-        <h1 className="font-display text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
-          {portfolioIndex.title}
-        </h1>
-        <Lede>{portfolioIndex.lede}</Lede>
-        <Prose>{portfolioIndex.body}</Prose>
-        {portfolioIsPlaceholder ? (
-          <p
-            role="note"
-            className="border-brand-gold/40 bg-brand-gold/10 text-brand-gold mt-6 rounded-lg border px-4 py-3 text-sm"
-          >
-            This page is running on placeholder data. Replace the entries in
-            <code className="mx-1">src/content/portfolio.ts</code> with real clients and results
-            before launch.
-          </p>
-        ) : null}
-      </MirrorSection>
+      <Section className="pt-28 pb-8 sm:pt-36">
+        <Reveal>
+          <h1 className="font-display text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
+            {portfolioIndex.title}
+          </h1>
+          <Lede className="mt-4">{portfolioIndex.lede}</Lede>
+          <Prose>{portfolioIndex.body}</Prose>
+          {portfolioIsPlaceholder ? (
+            <Alert className="border-brand-gold/40 bg-brand-gold/10 mt-6 max-w-2xl">
+              <TriangleAlert className="text-brand-gold" />
+              <AlertTitle className="text-brand-gold">Running on placeholder data</AlertTitle>
+              <AlertDescription>
+                Replace the entries in <code className="mx-1">src/content/portfolio.ts</code> with
+                real clients and results before launch.
+              </AlertDescription>
+            </Alert>
+          ) : null}
+        </Reveal>
+      </Section>
 
-      <MirrorSection title="Clients">
-        <ul className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+      <Section tone="muted">
+        <Reveal>
+          <SectionHeading title="Clients" />
+        </Reveal>
+        <RevealGroup className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3">
           {clients.map((client) => (
-            <li
+            <Card
               key={client}
-              className="border-border/70 text-muted-foreground flex min-h-16 items-center rounded-lg border px-4 text-sm"
+              className="text-muted-foreground flex min-h-16 items-center justify-center px-4 text-center text-sm"
             >
               {client}
-            </li>
+            </Card>
           ))}
-        </ul>
-      </MirrorSection>
+        </RevealGroup>
+      </Section>
 
-      <MirrorSection title="Case studies">
-        <ul className="grid gap-6 md:grid-cols-3">
+      <Section>
+        <Reveal>
+          <SectionHeading title="Case studies" />
+        </Reveal>
+        <RevealGroup className="mt-8 grid gap-6 md:grid-cols-3">
           {caseStudies.map((study) => (
-            <li key={study.slug} className="border-border/70 border-t pt-4">
-              <p className="text-muted-foreground text-xs tracking-wide uppercase">
-                {study.sector}
-              </p>
-              <h3 className="mt-2 font-semibold tracking-tight">
-                <Link to={`/portfolio/${study.slug}`} className="hover:text-brand">
-                  {study.title}
-                </Link>
-              </h3>
-              <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
-                {study.summary}
-              </p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {study.services.map((service) => (
-                  <Badge key={service} variant="secondary">
-                    {service}
-                  </Badge>
-                ))}
-              </div>
-            </li>
+            <CaseStudyCard key={study.slug} study={study} />
           ))}
-        </ul>
-      </MirrorSection>
+        </RevealGroup>
+      </Section>
     </>
   );
 }

@@ -52,7 +52,7 @@ export function SiteHeader() {
   return (
     <header
       className={cn(
-        'pointer-events-auto sticky top-0 z-50 w-full transition-all duration-300',
+        'sticky top-0 z-50 w-full transition-all duration-300',
         scrolled
           ? 'border-border bg-background/80 border-b backdrop-blur-xl'
           : 'border-b border-transparent',
@@ -72,9 +72,7 @@ export function SiteHeader() {
               className={({ isActive }) =>
                 cn(
                   'rounded-md px-3 py-2 text-sm font-medium transition-colors',
-                  isActive
-                    ? 'text-foreground'
-                    : 'text-muted-foreground hover:text-foreground',
+                  isActive ? 'text-foreground' : 'text-muted-foreground hover:text-foreground',
                 )
               }
             >

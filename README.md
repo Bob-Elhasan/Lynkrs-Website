@@ -1,7 +1,7 @@
 # Lynkrs
 
-The Lynkrs agency site: a 3D spatial journey rendered to WebGL, shipped as a PWA
-on GitHub Pages.
+The Lynkrs agency site: a React + Tailwind marketing site, shipped as a PWA on
+GitHub Pages.
 
 **Live:** https://bob-elhasan.github.io/Lynkrs-Website/
 
@@ -23,111 +23,39 @@ npm run dev          # http://localhost:5173
 
 ## What this is
 
-The site is one continuous 3D corridor. The company narrative — the 01–07
-story — is laid out as nine **stations** in that space, and scrolling flies the
-camera along a Catmull-Rom spline through them. Routes are named waypoints on
-the same spline, so `/bundles` flies to the Growth Suite station rather than
-swapping a page.
+An ordinary, server-rendered-at-build-time marketing site: a home page built
+from named sections (hero, problem, positioning, principles, method, growth
+suite, modules, together, contact), plus dedicated pages for services,
+bundles, portfolio, case studies and the contact form. Every route is real
+semantic HTML — no canvas, no client-side-only content — prerendered at build
+time so crawlers, screen readers and slow connections all get the full page
+before any JavaScript runs.
 
-| Station | Content |
-| --- | --- |
-| Arrival | "Growth is designed, not guessed" |
-| 01 The problem | Four costs, with shards pulling apart as you approach |
-| 02 Our positioning | The same shards converge into one lit system |
-| 03 How we think | Four principles |
-| 04 How we work | The five steps, lighting as they are reached |
-| 05 The Growth Suite | Diagnostics, Launchpad, Accelerate, Scale |
-| 06 What we run | M/01–M/04, each a door into its service page |
-| 07 Together | The partnership model |
-| Contact | The invitation; the form itself is DOM |
-
-## The SEO and accessibility tradeoff — read this first
-
-**The visible site renders to a WebGL canvas. Canvas content cannot be crawled
-by search engines or read by screen readers.** That was a deliberate choice.
-
-What compensates for it: every route is **prerendered to real semantic HTML** at
-build time from the same content layer the 3D scenes use. That markup ships in
-each route's `index.html` before any JavaScript runs, so crawlers and assistive
-technology get the full copy. It is also what renders visibly when WebGL is
-unavailable.
-
-**Content parity between the 3D stations and the DOM mirror is a rule, not a
-nicety.** They must always say the same thing. Divergence would be cloaking, and
-would break the accessible experience. Both read from `src/content/`, which is
-why that layer exists.
-
-Verify it any time:
-
-```bash
-npm run build
-grep -o "Visibility that keeps paying" dist/services/seo/index.html
-```
+Scroll-reveal and hover polish is layered on top with a small set of Motion
+(Framer Motion successor)-based components in
+`src/components/motion-primitives/`, wrapped by the house-style helpers in
+`src/components/marketing/` (`Reveal`, `RevealGroup`) so the same restrained
+fade-and-slide is used everywhere rather than one-off animation per section.
+`prefers-reduced-motion` is honoured globally via `<MotionConfig
+reducedMotion="user">` in `src/App.tsx`.
 
 ## Architecture
 
 ```
 src/
   content/          all copy, one file per domain — the single source of truth
-  xr/
-    stage.tsx       flat (R3F) vs immersive (IWSDK) mode selection
-    xr-world-stage.tsx  the IWSDK world, lazily loaded
-    world.ts        IWSDK bootstrap
-    scene.tsx       the whole corridor, lights, fog, starfield
-    rig.tsx         scroll and route -> camera position on the spline
-    spline.ts       the journey path and its stations
-    motion.ts       shared easing and duration tokens
-    quality.ts      device capability tiers and WebGL detection
-    stations/       one file per station
-    ui/panel.tsx    3D typography (drei/troika)
   components/
-    mirror/         the DOM mirror — semantic HTML for crawlers and a11y
-    ui/             58 shadcn-style primitives (Watermelon)
-    motion-primitives/  33 animated components (ibelick)
-  pages/            one file per route, rendering the mirror
+    sections/       homepage section components (hero, problem, method, …)
+    marketing/       shared presentational building blocks: cards, Reveal,
+                     RevealGroup, typography, icon maps
+    layout/          header, footer, root layout
+    ui/              57 shadcn-style primitives (Watermelon)
+    motion-primitives/  vendored animated components (ibelick)
+  pages/             one file per route
   prerender-entry.tsx  build-time static rendering
-scripts/prerender.mjs  writes the mirror into every route's index.html
-vendor/             both upstream repos, kept as reference source
+scripts/prerender.mjs  writes the prerendered HTML into every route's index.html
+vendor/              both upstream component repos, kept as reference source
 ```
-
-### Flat and immersive paths
-
-`@iwsdk/core` powers the WebXR path only, behind a lazy import triggered by the
-"Enter in VR" button — which appears solely when `navigator.xr` reports an
-immersive session is supported. Everyone else gets the same 3D corridor through
-React Three Fiber's own renderer.
-
-That split is not arbitrary. Measured on this scene:
-
-| 3D bundle | raw | gzip |
-| --- | --- | --- |
-| with `@iwsdk/core` in the flat path | 13,959 kB | 6,102 kB |
-| without it | 1,355 kB | 556 kB |
-
-The `@iwsdk/core` barrel re-exports every subsystem it ships — Havok physics,
-scene understanding, depth sensing, MCP tooling, the UIKitML parser — and they
-self-register, so none of it tree-shakes. It also pulls in ~6.9 MB of three.js
-addons. Charging every visitor 5.5 MB for physics a scroll journey never calls
-is not a trade worth making, so the headset path pays for headset features.
-
-**Do not add `three`, `@react-three/*` or `@iwsdk/*` to `manualChunks` in
-`vite.config.ts`.** Naming a shared 3D chunk is exactly what forces the IWSDK
-dependencies back into the flat path.
-
-### 3D typography
-
-drei's troika `<Text>`, not `@react-three/uikit`: uikit declares
-`@react-three/fiber >=8` but is built against the v8 reconciler and throws on
-v9, which React 19 requires.
-
-Troika cannot parse woff2, so `public/fonts/` holds **static single-weight
-Archivo TTFs** (400 and 600, 224 kB together, against 1,535 kB for the variable
-Archivo and Inter files). The DOM mirror still uses the full
-Inter/Archivo/Caveat woff2 set through fontsource.
-
-Type sizes in `src/xr/ui/panel.tsx` are set for the ~14 world-unit viewing
-distance the spline puts the camera at. Change the station spacing in
-`spline.ts` and they need revisiting.
 
 ## Editing the site
 
@@ -147,8 +75,6 @@ resolves back to it:
 --brand-deep: oklch(0.28 0.05 235);   /* #0D2C3E navy */
 --brand-gold: oklch(0.84 0.17 105);   /* #CDCD00 — kept rare */
 ```
-
-`src/xr/palette.ts` mirrors these for the 3D scenes; change both together.
 
 ## Deploying
 
