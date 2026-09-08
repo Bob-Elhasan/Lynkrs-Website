@@ -428,3 +428,63 @@
 @media (prefers-reduced-motion: reduce) {
   .lynkrs-motion-ready .lynkrs-home main > section, .spatial-page-hero__inner, .spatial-page-section__inner, .signal-card { opacity: 1; transform: none; transition: none; }
 }
+
+/* Lynkrs polish pass: one grid, one rhythm, cleaner reading widths. */
+:root { --lynkrs-content-max: 78rem; --lynkrs-gutter: clamp(1.25rem, 5vw, 5.5rem); --lynkrs-copy: 34rem; }
+body { overflow-x: hidden; }
+.site-shell--inner main { background: var(--lynkrs-cream, #f7f8fb); }
+.site-shell--inner main > * { min-width: 0; }
+.site-header-modern, .site-footer-modern { width: 100%; }
+.spatial-page-hero__inner, .spatial-page-section__inner { width: min(100%, var(--lynkrs-content-max)); padding-left: var(--lynkrs-gutter); padding-right: var(--lynkrs-gutter); }
+.spatial-page-hero__inner { padding-top: clamp(7rem, 13vw, 11rem); padding-bottom: clamp(4.5rem, 9vw, 7rem); }
+.spatial-page-hero h1 { max-width: 10ch; font-size: clamp(3.8rem, 8.4vw, 8rem); line-height: .9; letter-spacing: -.08em; }
+.spatial-page-hero p { width: min(100%, var(--lynkrs-copy)); margin: 2rem 0 0 clamp(0rem, 14vw, 12rem); line-height: 1.55; }
+.spatial-page-section__inner { padding-top: clamp(4.5rem, 8vw, 7.5rem); padding-bottom: clamp(4.5rem, 8vw, 7.5rem); }
+.section-kicker { display: flex; align-items: center; gap: .65rem; margin-bottom: 1.4rem; font-size: .72rem; font-weight: 700; letter-spacing: .12em; line-height: 1.2; text-transform: uppercase; }
+.spatial-section-title { max-width: 11ch; margin-top: 0; font-size: clamp(3rem, 6.6vw, 6rem); line-height: .92; }
+.spatial-section-body { width: min(100%, var(--lynkrs-copy)); margin: 1.4rem 0 0 clamp(0rem, 17vw, 14rem); line-height: 1.65; }
+.signal-grid { align-items: stretch; gap: 1.1rem; margin-top: clamp(2.75rem, 6vw, 5rem); }
+.signal-card { display: flex; flex-direction: column; min-height: 22rem; padding: clamp(1.2rem, 2vw, 1.65rem); border-radius: .25rem; }
+.signal-card h3 { max-width: 12ch; margin: 3.25rem 0 .85rem; line-height: 1.02; }
+.signal-card > p { max-width: 29rem; line-height: 1.55; }
+.signal-card .check-list { margin-top: auto; padding-top: 1.4rem; }
+.signal-card .spatial-link { margin-top: 1.25rem; }
+.check-list { line-height: 1.45; }
+.method-ribbon { width: 100%; max-width: 68rem; }
+.detail-grid, .contact-grid, .split-callout { width: 100%; max-width: 68rem; margin: 0 auto; }
+.detail-grid > *, .contact-grid > *, .split-callout > * { min-width: 0; }
+.detail-panel { border-radius: .25rem; }
+.conversation-form { border-radius: .25rem; }
+.site-footer-modern { width: min(100%, var(--lynkrs-content-max)); margin: 0 auto; padding-left: var(--lynkrs-gutter); padding-right: var(--lynkrs-gutter); }
+.site-footer-modern__lead .logo-image { width: 7rem; }
+
+/* Homepage alignment */
+.lynkrs-home .hero-panel, .lynkrs-home .manifesto-section, .lynkrs-home .services-section, .lynkrs-home .work-section, .lynkrs-home .closing-section { padding-left: var(--lynkrs-gutter); padding-right: var(--lynkrs-gutter); }
+.lynkrs-home .hero-copy { width: min(100%, var(--lynkrs-content-max)); margin: 0 auto; }
+.lynkrs-home .hero-copy h1 { max-width: 9ch; font-size: clamp(4rem, 8.8vw, 9rem); }
+.lynkrs-home .hero-summary { max-width: 33rem; margin-left: clamp(0rem, 14vw, 13rem); line-height: 1.55; }
+.lynkrs-home .hero-footer, .lynkrs-home .manifesto-section > *, .lynkrs-home .services-section > *, .lynkrs-home .work-section > *, .lynkrs-home .closing-section > * { width: min(100%, var(--lynkrs-content-max)); margin-left: auto; margin-right: auto; }
+.lynkrs-home .manifesto-grid, .lynkrs-home .work-intro { align-items: start; gap: clamp(2rem, 8vw, 8rem); }
+.lynkrs-home .manifesto-copy, .lynkrs-home .work-intro p { max-width: var(--lynkrs-copy); line-height: 1.65; }
+.lynkrs-home .pillars-grid, .lynkrs-home .services-list, .lynkrs-home .work-cards { width: min(100%, var(--lynkrs-content-max)); margin-left: auto; margin-right: auto; }
+.lynkrs-home .services-heading { width: min(100%, var(--lynkrs-content-max)); margin-left: auto; margin-right: auto; }
+.lynkrs-home .services-heading p { max-width: 30rem; line-height: 1.55; }
+.lynkrs-home .work-card { border-radius: .25rem; }
+.lynkrs-home .closing-section h2 { width: min(100%, var(--lynkrs-content-max)); margin-left: auto; margin-right: auto; }
+
+@media (max-width: 850px) {
+  .spatial-page-hero p, .spatial-section-body, .lynkrs-home .hero-summary { margin-left: 0; }
+  .spatial-page-hero h1 { max-width: 9ch; }
+}
+@media (max-width: 560px) {
+  :root { --lynkrs-gutter: 1.1rem; }
+  .spatial-page-hero__inner { padding-top: 7rem; padding-bottom: 4.5rem; }
+  .spatial-page-hero h1 { font-size: clamp(3.25rem, 16vw, 5.2rem); }
+  .spatial-page-hero p { font-size: 1rem; }
+  .spatial-section-title { font-size: clamp(2.9rem, 14vw, 5rem); }
+  .signal-card { min-height: 17rem; }
+  .signal-card h3 { margin-top: 2.4rem; }
+  .site-footer-modern { padding-top: 3.5rem; }
+  .site-footer-modern__nav { gap: 1.5rem 1rem; }
+  .lynkrs-home .hero-copy h1 { font-size: clamp(3.8rem, 17vw, 6.5rem); }
+}
