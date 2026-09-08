@@ -1,4 +1,4 @@
-import { type CSSProperties, type ReactNode, useEffect, useRef } from 'react';
+import { type CSSProperties, type ReactNode, useEffect, useRef, useState } from 'react';
 import { ArrowUpRight, Check, MoveUpRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Reveal } from '@/components/marketing/reveal';
@@ -7,9 +7,12 @@ import { cn } from '@/lib/utils';
 
 export function useSpatialMotion() {
   const ref = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
   useEffect(() => {
     const element = ref.current;
     if (!element) return;
+    const observer = new IntersectionObserver(([entry]) => setIsVisible(entry.isIntersecting), { threshold: 0.14 });
+    observer.observe(element);
     let frame = 0;
     const onScroll = () => {
       cancelAnimationFrame(frame);
@@ -23,13 +26,21 @@ export function useSpatialMotion() {
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     window.addEventListener('resize', onScroll);
+    const onPointer = (event: PointerEvent) => {
+      const bounds = element.getBoundingClientRect();
+      element.style.setProperty('--pointer-x', `${(event.clientX - bounds.left) / Math.max(bounds.width, 1) - 0.5}`);
+      element.style.setProperty('--pointer-y', `${(event.clientY - bounds.top) / Math.max(bounds.height, 1) - 0.5}`);
+    };
+    element.addEventListener('pointermove', onPointer);
     return () => {
+      observer.disconnect();
       cancelAnimationFrame(frame);
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', onScroll);
+      element.removeEventListener('pointermove', onPointer);
     };
   }, []);
-  return ref;
+  return { ref, isVisible };
 }
 
 export function SpatialField({ className }: { className?: string }) {
@@ -44,9 +55,9 @@ export function SpatialField({ className }: { className?: string }) {
 }
 
 export function PageHero({ number, eyebrow, title, lede, accent = 'dark' }: { number: string; eyebrow: string; title: ReactNode; lede: string; accent?: 'dark' | 'yellow' }) {
-  const ref = useSpatialMotion();
+  const { ref, isVisible } = useSpatialMotion();
   return (
-    <section ref={ref} className={cn('spatial-page-hero', accent === 'yellow' ? 'spatial-page-hero--yellow' : 'spatial-page-hero--dark')}>
+    <section ref={ref} className={cn('spatial-page-hero', isVisible && 'is-visible', accent === 'yellow' ? 'spatial-page-hero--yellow' : 'spatial-page-hero--dark')}>
       <SpatialField />
       <div className="spatial-page-hero__inner">
         <div className="section-kicker"><span>{number}</span><span>{eyebrow}</span></div>
@@ -58,7 +69,8 @@ export function PageHero({ number, eyebrow, title, lede, accent = 'dark' }: { nu
 }
 
 export function PageSection({ children, className, tone = 'light' }: { children: ReactNode; className?: string; tone?: 'light' | 'dark' | 'yellow' }) {
-  return <section className={cn('spatial-page-section', `spatial-page-section--${tone}`, className)}><div className="spatial-page-section__inner">{children}</div></section>;
+  const { ref, isVisible } = useSpatialMotion();
+  return <section ref={ref} className={cn('spatial-page-section', isVisible && 'is-visible', `spatial-page-section--${tone}`, className)}><div className="spatial-page-section__inner">{children}</div></section>;
 }
 
 export function SectionIntro({ eyebrow, title, body }: { eyebrow: string; title: ReactNode; body?: string }) {
@@ -70,8 +82,8 @@ export function LinkArrow({ to, children, className }: { to: string; children: R
 }
 
 export function SignalCard({ index, title, body, children, className }: { index: string; title: string; body: string; children?: ReactNode; className?: string }) {
-  const ref = useSpatialMotion();
-  return <article ref={ref} className={cn('signal-card', className)}><div className="signal-card__top"><span>{index}</span><MoveUpRight size={18} /></div><h3>{title}</h3><p>{body}</p>{children}</article>;
+  const { ref, isVisible } = useSpatialMotion();
+  return <article ref={ref} className={cn('signal-card', isVisible && 'is-visible', className)}><div className="signal-card__top"><span>{index}</span><MoveUpRight size={18} /></div><h3>{title}</h3><p>{body}</p>{children}</article>;
 }
 
 export function CheckList({ items }: { items: string[] }) {

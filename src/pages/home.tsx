@@ -27,7 +27,27 @@ export default function HomePage() {
 
   useEffect(() => {
     const timer = window.setTimeout(() => setLoading(false), 1450);
-    return () => window.clearTimeout(timer);
+    const root = document.documentElement;
+    root.classList.add('lynkrs-motion-ready');
+    const sections = Array.from(document.querySelectorAll<HTMLElement>('.lynkrs-home main > section'));
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => entry.isIntersecting && entry.target.classList.add('is-visible'));
+    }, { threshold: 0.12 });
+    sections.forEach((section) => observer.observe(section));
+    const hero = document.querySelector<HTMLElement>('.hero-panel');
+    const onPointer = (event: PointerEvent) => {
+      if (!hero) return;
+      const bounds = hero.getBoundingClientRect();
+      hero.style.setProperty('--pointer-x', `${(event.clientX - bounds.left) / Math.max(bounds.width, 1) - 0.5}`);
+      hero.style.setProperty('--pointer-y', `${(event.clientY - bounds.top) / Math.max(bounds.height, 1) - 0.5}`);
+    };
+    hero?.addEventListener('pointermove', onPointer);
+    return () => {
+      window.clearTimeout(timer);
+      observer.disconnect();
+      hero?.removeEventListener('pointermove', onPointer);
+      root.classList.remove('lynkrs-motion-ready');
+    };
   }, []);
 
   return (
