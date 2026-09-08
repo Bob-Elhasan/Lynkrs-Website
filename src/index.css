@@ -488,3 +488,25 @@ body { overflow-x: hidden; }
   .site-footer-modern__nav { gap: 1.5rem 1rem; }
   .lynkrs-home .hero-copy h1 { font-size: clamp(3.8rem, 17vw, 6.5rem); }
 }
+
+/* Script accent polish: controlled, baseline-aligned, never loose or decorative by accident. */
+:where(.spatial-page h1, .spatial-section-title, .hero-copy h1, .manifesto-grid h2, .services-heading h2, .work-intro h2, .closing-section h2) em {
+  display: inline-block;
+  font-family: var(--font-hand);
+  font-size: .96em;
+  font-style: normal;
+  font-weight: 500;
+  letter-spacing: -.035em;
+  line-height: .78;
+  white-space: nowrap;
+  vertical-align: baseline;
+  transform: translateY(.04em);
+}
+.spatial-page h1 em { font-size: .92em; letter-spacing: -.025em; }
+.spatial-section-title em { font-size: .94em; }
+.hero-copy h1 em, .services-heading h2 em, .work-intro h2 em, .closing-section h2 em { font-size: 1.02em; }
+.work-card strong em { display: inline-block; font-family: var(--font-hand); font-size: .98em; font-style: normal; font-weight: 500; letter-spacing: -.02em; line-height: .8; vertical-align: baseline; transform: translateY(.04em); }
+.spatial-page .quote-line, .spatial-footer p { font-family: var(--font-hand); font-weight: 500; letter-spacing: -.015em; }
+@media (max-width: 560px) {
+  :where(.spatial-page h1, .spatial-section-title, .hero-copy h1, .manifesto-grid h2, .services-heading h2, .work-intro h2, .closing-section h2) em { letter-spacing: -.02em; transform: translateY(.03em); }
+}
