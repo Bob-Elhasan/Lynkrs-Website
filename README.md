@@ -23,29 +23,39 @@ npm run dev          # http://localhost:5173
 
 ## What this is
 
-An ordinary, server-rendered-at-build-time marketing site: a home page built
-from named sections (hero, problem, positioning, principles, method, growth
-suite, modules, together, contact), plus dedicated pages for services,
-bundles, portfolio, case studies and the contact form. Every route is real
-semantic HTML — no canvas, no client-side-only content — prerendered at build
-time so crawlers, screen readers and slow connections all get the full page
-before any JavaScript runs.
+The homepage ("/") is **The Elevator Pitch**: a first-person Three.js scene.
+The visitor rides an elevator whose doors open onto a button panel (Our
+Journey, Our Services, Our Clients, Contact Us); picking one closes the doors,
+shakes the cab, and opens onto a corridor of labelled doors carrying that
+floor's content. All camera movement is scroll- or swipe-driven, GSAP drives
+the door/transition tweens, and Howler plays a small set of synthesized sound
+effects (muted until the visitor opts in via the speaker icon). See
+`src/three/` below.
 
-Scroll-reveal and hover polish is layered on top with a small set of Motion
-(Framer Motion successor)-based components in
+Every other route (`/services`, `/services/:slug`, `/bundles`, `/portfolio`,
+`/portfolio/:slug`, `/contact`) is an ordinary, server-rendered-at-build-time
+page: real semantic HTML, prerendered so crawlers, screen readers and slow
+connections get the full page before any JavaScript runs. `src/pages/home.tsx`
+is *not* rendered live — it exists only as the prerendered DOM mirror for `/`,
+since the 3D canvas has nothing for a crawler or screen reader to read.
+
+Scroll-reveal and hover polish on the inner pages is layered on top with a
+small set of Motion (Framer Motion successor)-based components in
 `src/components/motion-primitives/`, wrapped by the house-style helpers in
 `src/components/marketing/` (`Reveal`, `RevealGroup`) so the same restrained
 fade-and-slide is used everywhere rather than one-off animation per section.
-`prefers-reduced-motion` is honoured globally via `<MotionConfig
-reducedMotion="user">` in `src/App.tsx`.
 
 ## Architecture
 
 ```
 src/
+  three/            the "/" Three.js scene — see below
   content/          all copy, one file per domain — the single source of truth
   components/
-    sections/       homepage section components (hero, problem, method, …)
+    site/           elevator-scene.tsx (the React shell around src/three/),
+                     spatial-page.tsx (shared layout for the inner pages)
+    sections/       homepage section components (hero, problem, method, …) —
+                     used only by the prerendered DOM mirror, not live
     marketing/       shared presentational building blocks: cards, Reveal,
                      RevealGroup, typography, icon maps
     layout/          header, footer, root layout
@@ -56,6 +66,30 @@ src/
 scripts/prerender.mjs  writes the prerendered HTML into every route's index.html
 vendor/              both upstream component repos, kept as reference source
 ```
+
+### `src/three/` — the Elevator Pitch scene
+
+No external texture packs, HDRIs or audio files: every material, environment
+reflection, on-scene label and sound effect is generated at runtime, so the
+first paint never waits on an asset request.
+
+| File | What it does |
+| --- | --- |
+| `ElevatorApp.ts` | The scene orchestrator — renderer/camera/composer setup, the scroll+touch input state machine, GSAP-driven floor transitions, the render loop |
+| `elevator.ts` | Builds the lobby: exterior doors + frame + engraved logo, the interior cab and its button console |
+| `corridor.ts` | Builds one floor's corridor (walls, ceiling lights, signage) and its labelled doors, each with a canvas-rendered content panel that reveals when opened |
+| `content.ts` | Maps the real copy in `src/content/` onto the four floors (Our Journey, Our Services, Our Clients, Contact Us) and their doors |
+| `materials.ts` | The shared PBR material set (brushed steel, gold trim, polished floors) plus a procedural env map baked once via `PMREMGenerator` for metal reflections |
+| `textures.ts` | Canvas-based text labels, word-wrapped content panels, and the procedural brushed-metal noise/env-map generators |
+| `audio.ts` | Synthesizes every sound effect (door slide, click, hum, rumble, ding, footstep, creak) with `OfflineAudioContext`, then hands the resulting WAV blobs to Howler; muted until the visitor opts in |
+| `dispose.ts` | Shared geometry/material/texture disposal for scene teardown |
+
+`src/components/site/elevator-scene.tsx` is the only React in this picture: it
+mounts the canvas, forwards scroll/click to `ElevatorApp`, and renders the
+small set of HTML that has to stay HTML — the loading screen, the sound
+toggle, the back button, and a door's optional "explore further" link (which
+routes to the matching real page, e.g. a service door links to
+`/services/:slug`).
 
 ## Editing the site
 
