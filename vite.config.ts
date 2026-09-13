@@ -75,5 +75,5 @@ export default defineConfig({
     rollupOptions: { output: { manualChunks } },
     chunkSizeWarningLimit: 1600,
   },
-  server: { port: 5173, host: true },
+  server: { port: 5173, host: true, allowedHosts: true },
 });
