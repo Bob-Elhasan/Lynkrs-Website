@@ -62,7 +62,9 @@ export function PageHero({ number, eyebrow, title, lede, accent = 'dark' }: { nu
     <section ref={ref} className={cn('spatial-page-hero', `spatial-page-hero--${page}`, isVisible && 'is-visible', accent === 'yellow' ? 'spatial-page-hero--yellow' : 'spatial-page-hero--dark')}>
       <SpatialField />
       <div className="spatial-page-hero__inner">
-        <div className="section-kicker"><span>{number}</span><span>{eyebrow}</span></div>
+        {/* Reads as a floor indicator, so the inner pages stay part of the
+            same building as the lift on the landing route. */}
+        <div className="section-kicker"><span className="floor-tag">Floor {number}</span><span>{eyebrow}</span></div>
         <h1>{title}</h1>
         <p>{lede}</p>
       </div>

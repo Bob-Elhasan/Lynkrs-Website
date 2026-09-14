@@ -1,228 +1,392 @@
 import * as THREE from 'three';
 import type { SceneMaterials } from './materials';
-import { createLabelTexture } from './textures';
+import { PALETTE } from './palette';
+import { createEngravedPlaque, createLabelTexture } from './textures';
+import { createCeilingFixture, createPlant, createTelephone, createWallSign, type TelephoneBuild } from './props';
 import type { FloorContent } from './content';
 
+/**
+ * A through-car lift: you enter through the front doors and leave through
+ * the rear ones, so the journey never asks the visitor to turn around.
+ */
+
+export const CAB = {
+  halfWidth: 1.2,
+  height: 2.8,
+  frontZ: 0,
+  backZ: -2.6,
+  /** Where the camera stands inside the car. */
+  centerZ: -1.3,
+  doorClosedX: 0.6,
+  doorOpenX: 1.26,
+  doorHeight: 2.32,
+  /** Right-hand wall, where the panel and telephone live. */
+  panelWallX: 1.18,
+} as const;
+
 export type ElevatorButton = {
-  /** The small visible puck; its material swaps to show the lit state. */
   dotMesh: THREE.Mesh;
-  /** A larger invisible plane used for raycasting, so the tap target stays comfortable. */
   hitMesh: THREE.Mesh;
-  label: string;
   floorId: FloorContent['id'];
+  label: string;
   lit: boolean;
+};
+
+export type DoorPair = {
+  left: THREE.Mesh;
+  right: THREE.Mesh;
+  /** 0 closed, 1 open. */
+  openAmount: number;
 };
 
 export type ElevatorBuild = {
   group: THREE.Group;
-  doorLeft: THREE.Mesh;
-  doorRight: THREE.Mesh;
-  seam: THREE.Mesh;
-  logoPlane: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>;
-  taglinePlane: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>;
-  interiorGroup: THREE.Group;
+  frontDoors: DoorPair;
+  backDoors: DoorPair;
   buttons: ElevatorButton[];
-  ceilingLight: THREE.Mesh;
-  interiorDoorLeft: THREE.Mesh;
-  interiorDoorRight: THREE.Mesh;
+  telephone: TelephoneBuild;
+  logoPlane: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshStandardMaterial>;
+  taglinePlane: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshStandardMaterial>;
+  floorReadout: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>;
+  setFloorReadout: (text: string) => void;
 };
 
-const DOOR_HALF_WIDTH = 0.55;
-const DOOR_HEIGHT = 2.5;
-const DOOR_OPEN_OFFSET = 0.62;
+function buildDoorLeaf(materials: SceneMaterials, width: number) {
+  const leaf = new THREE.Group();
 
-/** Builds the exterior lobby: doors, frame, engraved logo, surrounding wall. */
-export function buildElevatorExterior(materials: SceneMaterials): {
-  group: THREE.Group;
-  doorLeft: THREE.Mesh;
-  doorRight: THREE.Mesh;
-  seam: THREE.Mesh;
-  logoPlane: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>;
-  taglinePlane: THREE.Mesh<THREE.PlaneGeometry, THREE.MeshBasicMaterial>;
-} {
-  const group = new THREE.Group();
+  const panel = new THREE.Mesh(new THREE.BoxGeometry(width, CAB.doorHeight, 0.06), materials.steel);
+  panel.castShadow = true;
+  leaf.add(panel);
 
-  const frameTop = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.15, 0.3), materials.darkSteel);
-  frameTop.position.set(0, 2.65, 0);
-  const frameBottom = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.1, 0.3), materials.darkSteel);
-  frameBottom.position.set(0, 0.05, 0);
-  const frameLeft = new THREE.Mesh(new THREE.BoxGeometry(0.15, 2.7, 0.3), materials.darkSteel);
-  frameLeft.position.set(-1.225, 1.35, 0);
-  const frameRight = new THREE.Mesh(new THREE.BoxGeometry(0.15, 2.7, 0.3), materials.darkSteel);
-  frameRight.position.set(1.225, 1.35, 0);
-  group.add(frameTop, frameBottom, frameLeft, frameRight);
+  // A recessed centre band catches the ceiling light and gives the steel
+  // something to read against.
+  const band = new THREE.Mesh(new THREE.BoxGeometry(width - 0.1, CAB.doorHeight - 0.5, 0.012), materials.steelDark);
+  band.position.z = 0.032;
+  leaf.add(band);
 
-  // Gold trim strip around the frame.
-  const trim = new THREE.Mesh(new THREE.BoxGeometry(2.66, 2.76, 0.04), materials.gold);
-  trim.position.set(0, 1.35, -0.14);
-  group.add(trim);
+  const inner = new THREE.Mesh(new THREE.BoxGeometry(width - 0.16, CAB.doorHeight - 0.62, 0.014), materials.steel);
+  inner.position.z = 0.038;
+  leaf.add(inner);
 
-  const doorLeft = new THREE.Mesh(new THREE.BoxGeometry(1.1, DOOR_HEIGHT, 0.05), materials.steel);
-  doorLeft.position.set(-DOOR_HALF_WIDTH, 1.35, 0);
-  doorLeft.castShadow = true;
-  const doorRight = new THREE.Mesh(new THREE.BoxGeometry(1.1, DOOR_HEIGHT, 0.05), materials.steel);
-  doorRight.position.set(DOOR_HALF_WIDTH, 1.35, 0);
-  doorRight.castShadow = true;
-  group.add(doorLeft, doorRight);
-
-  const seam = new THREE.Mesh(new THREE.PlaneGeometry(0.006, DOOR_HEIGHT), new THREE.MeshBasicMaterial({ color: 0x0a0a0a }));
-  seam.position.set(0, 1.35, 0.03);
-  group.add(seam);
-
-  const logoTexture = createLabelTexture('LYNKRS', 512, 128, {
-    fontSize: 58,
-    color: '#c8a85c',
-    font: 'Georgia, serif',
-    letterSpacing: 6,
-  });
-  const logoPlane = new THREE.Mesh(
-    new THREE.PlaneGeometry(1.2, 0.3),
-    new THREE.MeshBasicMaterial({ map: logoTexture, transparent: true }),
-  );
-  logoPlane.position.set(0, 1.85, 0.04);
-  group.add(logoPlane);
-
-  const taglineTexture = createLabelTexture('Turn motion into momentum.', 640, 72, {
-    fontSize: 22,
-    color: '#9a9a94',
-    font: 'Georgia, serif',
-  });
-  const taglinePlane = new THREE.Mesh(
-    new THREE.PlaneGeometry(1.5, 0.17),
-    new THREE.MeshBasicMaterial({ map: taglineTexture, transparent: true }),
-  );
-  taglinePlane.position.set(0, 1.6, 0.04);
-  group.add(taglinePlane);
-
-  return { group, doorLeft, doorRight, seam, logoPlane, taglinePlane };
+  return leaf;
 }
 
-/** Builds the elevator interior: walls, ceiling, title, and the button console. */
-export function buildElevatorInterior(materials: SceneMaterials, floors: FloorContent[]) {
-  const interiorGroup = new THREE.Group();
-  interiorGroup.position.set(0, 0, -1.5);
+function buildDoorPair(materials: SceneMaterials, z: number, facing: 1 | -1): { group: THREE.Group; pair: DoorPair } {
+  const group = new THREE.Group();
+  const leafWidth = CAB.doorClosedX * 2;
 
-  const backWall = new THREE.Mesh(new THREE.BoxGeometry(2.2, 2.7, 0.1), materials.wallInterior);
-  backWall.position.set(0, 1.35, -1.2);
-  const sideWallL = new THREE.Mesh(new THREE.BoxGeometry(0.1, 2.7, 2.5), materials.wallInterior);
-  sideWallL.position.set(-1.1, 1.35, 0);
-  const sideWallR = new THREE.Mesh(new THREE.BoxGeometry(0.1, 2.7, 2.5), materials.wallInterior);
-  sideWallR.position.set(1.1, 1.35, 0);
-  const ceiling = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.1, 2.5), materials.wallInterior);
-  ceiling.position.set(0, 2.7, 0);
-  const intFloor = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.05, 2.5), materials.floorPolished);
-  intFloor.position.set(0, 0.025, 0);
-  intFloor.receiveShadow = true;
-  interiorGroup.add(backWall, sideWallL, sideWallR, ceiling, intFloor);
+  const left = buildDoorLeaf(materials, leafWidth);
+  left.position.set(-CAB.doorClosedX, CAB.doorHeight / 2, z);
+  const right = buildDoorLeaf(materials, leafWidth);
+  right.position.set(CAB.doorClosedX, CAB.doorHeight / 2, z);
+  right.rotation.y = Math.PI;
 
-  // Interior sliding doors (visually separate from exterior doors so the cab
-  // reads as its own enclosed box once the camera passes the threshold).
-  const interiorDoorLeft = new THREE.Mesh(new THREE.BoxGeometry(1.08, DOOR_HEIGHT, 0.04), materials.steel);
-  interiorDoorLeft.position.set(-DOOR_HALF_WIDTH, 1.35, 1.47);
-  const interiorDoorRight = new THREE.Mesh(new THREE.BoxGeometry(1.08, DOOR_HEIGHT, 0.04), materials.steel);
-  interiorDoorRight.position.set(DOOR_HALF_WIDTH, 1.35, 1.47);
-  interiorGroup.add(interiorDoorLeft, interiorDoorRight);
+  group.add(left, right);
 
-  const ceilingLight = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.02, 0.3), materials.emissivePanel);
-  ceilingLight.position.set(0, 2.68, 0);
-  interiorGroup.add(ceilingLight);
+  // Surround, built as four bars rather than a slab — a solid box here would
+  // sit in front of the leaves and hide them.
+  const frameZ = z + 0.07 * facing;
+  const jambWidth = 0.15;
 
-  const titleTexture = createLabelTexture('The Elevator Pitch', 900, 140, {
-    fontSize: 56,
-    color: '#c8a85c',
-    font: 'Georgia, serif',
-  });
-  const titlePlane = new THREE.Mesh(
-    new THREE.PlaneGeometry(1.9, 0.3),
-    new THREE.MeshBasicMaterial({ map: titleTexture, transparent: true }),
+  const head = new THREE.Mesh(
+    new THREE.BoxGeometry(CAB.halfWidth * 2 + jambWidth * 2, 0.16, 0.12),
+    materials.steelDark,
   );
-  titlePlane.position.set(0, 2.0, -1.14);
-  interiorGroup.add(titlePlane);
+  head.position.set(0, CAB.doorHeight + 0.08, frameZ);
+  group.add(head);
 
-  const titleLine = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 0.004), materials.gold);
-  titleLine.position.set(0, 1.82, -1.14);
-  interiorGroup.add(titleLine);
-
-  const subTexture = createLabelTexture('Growth is designed, not guessed.', 900, 90, {
-    fontSize: 26,
-    color: '#8f8f89',
-    font: 'Georgia, serif',
-  });
-  const subPlane = new THREE.Mesh(
-    new THREE.PlaneGeometry(1.6, 0.16),
-    new THREE.MeshBasicMaterial({ map: subTexture, transparent: true }),
-  );
-  subPlane.position.set(0, 1.68, -1.14);
-  interiorGroup.add(subPlane);
-
-  // Button console.
-  const panelGroup = new THREE.Group();
-  panelGroup.position.set(0.9, 1.3, -0.3);
-  panelGroup.rotation.y = -Math.PI / 2;
-  interiorGroup.add(panelGroup);
-
-  const panelBack = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.62, 0.02), materials.darkSteel);
-  panelGroup.add(panelBack);
-  const panelTrim = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.64, 0.015), materials.gold);
-  panelTrim.position.z = -0.006;
-  panelGroup.add(panelTrim);
-
-  const buttons: ElevatorButton[] = [];
-  floors.forEach((floor, i) => {
-    const yPos = 0.2 - i * 0.13;
-    const btnGeo = new THREE.CylinderGeometry(0.026, 0.026, 0.016, 20);
-    const btnMesh = new THREE.Mesh(btnGeo, materials.buttonOff.clone());
-    btnMesh.rotation.x = Math.PI / 2;
-    btnMesh.position.set(-0.09, yPos, 0.016);
-    btnMesh.userData = { floorId: floor.id, label: floor.buttonLabel };
-    panelGroup.add(btnMesh);
-
-    const lblTexture = createLabelTexture(floor.buttonLabel, 320, 56, {
-      fontSize: 26,
-      color: '#a9a9a3',
-      font: 'Georgia, serif',
-      align: 'left',
-    });
-    const lblPlane = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.19, 0.033),
-      new THREE.MeshBasicMaterial({ map: lblTexture, transparent: true }),
-    );
-    lblPlane.position.set(0.035, yPos, 0.016);
-    panelGroup.add(lblPlane);
-
-    // A generous invisible hit-plane covering the dot + full label width, so
-    // the tap target is comfortable even though the physical button reads small.
-    const hitMesh = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.4, 0.13),
-      new THREE.MeshBasicMaterial({ visible: false }),
-    );
-    hitMesh.position.set(0.06, yPos, 0.02);
-    hitMesh.userData = { floorId: floor.id, label: floor.buttonLabel };
-    panelGroup.add(hitMesh);
-
-    buttons.push({ dotMesh: btnMesh, hitMesh, label: floor.buttonLabel, floorId: floor.id, lit: false });
+  [-1, 1].forEach((s) => {
+    const jamb = new THREE.Mesh(new THREE.BoxGeometry(jambWidth, CAB.doorHeight + 0.16, 0.12), materials.steelDark);
+    jamb.position.set(s * (CAB.halfWidth + jambWidth / 2), (CAB.doorHeight + 0.16) / 2, frameZ);
+    group.add(jamb);
   });
 
-  return { interiorGroup, buttons, ceilingLight, interiorDoorLeft, interiorDoorRight };
+  const sill = new THREE.Mesh(new THREE.BoxGeometry(CAB.halfWidth * 2 + jambWidth * 2, 0.03, 0.2), materials.brass);
+  sill.position.set(0, 0.015, z);
+  group.add(sill);
+
+  return { group, pair: { left: left as unknown as THREE.Mesh, right: right as unknown as THREE.Mesh, openAmount: 0 } };
+}
+
+/** Applies an eased 0..1 open amount to a pair of centre-opening doors. */
+export function setDoorOpen(pair: DoorPair, amount: number) {
+  const travel = CAB.doorOpenX - CAB.doorClosedX;
+  pair.openAmount = amount;
+  pair.left.position.x = -CAB.doorClosedX - travel * amount;
+  pair.right.position.x = CAB.doorClosedX + travel * amount;
 }
 
 export function buildElevator(materials: SceneMaterials, floors: FloorContent[]): ElevatorBuild {
-  const exterior = buildElevatorExterior(materials);
-  const interior = buildElevatorInterior(materials, floors);
-  exterior.group.add(interior.interiorGroup);
+  const group = new THREE.Group();
+
+  // ─── Lobby side: wall the lift sits in, plus greenery ───
+  const lobbyWallHeight = 3.6;
+  const lobbyWallWidth = 9;
+  const jambWidth = (lobbyWallWidth - CAB.halfWidth * 2 - 0.3) / 2;
+
+  [-1, 1].forEach((side) => {
+    const jamb = new THREE.Mesh(new THREE.BoxGeometry(jambWidth, lobbyWallHeight, 0.25), materials.wallCream);
+    jamb.position.set(side * (CAB.halfWidth + 0.15 + jambWidth / 2), lobbyWallHeight / 2, 0.13);
+    jamb.receiveShadow = true;
+    group.add(jamb);
+  });
+
+  const lintel = new THREE.Mesh(
+    new THREE.BoxGeometry(lobbyWallWidth, lobbyWallHeight - CAB.doorHeight - 0.16, 0.25),
+    materials.wallCream,
+  );
+  lintel.position.set(0, CAB.doorHeight + 0.16 + (lobbyWallHeight - CAB.doorHeight - 0.16) / 2, 0.13);
+  group.add(lintel);
+
+  // Navy band above the doors, carrying the floor readout.
+  const band = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.44, 0.04), materials.wallNavy);
+  band.position.set(0, CAB.doorHeight + 0.42, 0.26);
+  group.add(band);
+
+  const readoutTex = createLabelTexture('G', 256, 128, { fontSize: 74, color: '#cdcd00', weight: '600' });
+  const floorReadout = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.34, 0.17),
+    new THREE.MeshBasicMaterial({ map: readoutTex, transparent: true }),
+  );
+  floorReadout.position.set(0, CAB.doorHeight + 0.42, 0.285);
+  group.add(floorReadout);
+
+  const setFloorReadout = (text: string) => {
+    floorReadout.material.map?.dispose();
+    floorReadout.material.map = createLabelTexture(text, 256, 128, {
+      fontSize: 74,
+      color: '#cdcd00',
+      weight: '600',
+    });
+    floorReadout.material.needsUpdate = true;
+  };
+
+  // Engraved brand lockup on the closed doors, spanning both leaves.
+  const logoTex = createEngravedPlaque('LYNKRS', 1024, 240, { fontSize: 128, letterSpacing: 18 });
+  const logoPlane = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.5, 0.35),
+    new THREE.MeshStandardMaterial({ map: logoTex, roughness: 0.28, metalness: 0.8, transparent: true }),
+  );
+  logoPlane.position.set(0, 1.72, 0.041);
+  group.add(logoPlane);
+
+  const taglineTex = createLabelTexture('Turn motion into momentum.', 900, 90, {
+    fontSize: 34,
+    color: '#4a6180',
+    weight: '400',
+  });
+  const taglinePlane = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.35, 0.135),
+    new THREE.MeshStandardMaterial({ map: taglineTex, roughness: 0.4, metalness: 0.6, transparent: true }),
+  );
+  taglinePlane.position.set(0, 1.46, 0.041);
+  group.add(taglinePlane);
+
+  // Plants flanking the lift, as asked.
+  [-1, 1].forEach((side) => {
+    const plant = createPlant(materials, 1.15);
+    plant.position.set(side * (CAB.halfWidth + 0.62), 0, 0.52);
+    group.add(plant);
+  });
+
+  // Lobby floor and ceiling, so the space reads as a room rather than a void.
+  const lobbyFloor = new THREE.Mesh(new THREE.PlaneGeometry(14, 16), materials.floorStone);
+  lobbyFloor.rotation.x = -Math.PI / 2;
+  lobbyFloor.position.z = 7;
+  lobbyFloor.receiveShadow = true;
+  group.add(lobbyFloor);
+
+  const lobbyCeiling = new THREE.Mesh(new THREE.PlaneGeometry(14, 16), materials.wallCream);
+  lobbyCeiling.rotation.x = Math.PI / 2;
+  lobbyCeiling.position.set(0, lobbyWallHeight, 7);
+  group.add(lobbyCeiling);
+
+  [-1, 1].forEach((side) => {
+    const wall = new THREE.Mesh(new THREE.PlaneGeometry(16, lobbyWallHeight), materials.wallCream);
+    wall.rotation.y = side === -1 ? Math.PI / 2 : -Math.PI / 2;
+    wall.position.set(side * 7, lobbyWallHeight / 2, 7);
+    group.add(wall);
+  });
+
+  for (let i = 0; i < 3; i++) {
+    const fixture = createCeilingFixture(materials, 2.2, 0.3);
+    fixture.position.set(0, lobbyWallHeight - 0.02, 2 + i * 4);
+    group.add(fixture);
+  }
+
+  // ─── The car ───
+  const cab = new THREE.Group();
+  group.add(cab);
+
+  const backWall = new THREE.Mesh(new THREE.BoxGeometry(CAB.halfWidth * 2, CAB.height, 0.1), materials.steel);
+  backWall.position.set(0, CAB.height / 2, CAB.backZ - 0.05);
+  cab.add(backWall);
+
+  [-1, 1].forEach((side) => {
+    const wall = new THREE.Mesh(
+      new THREE.BoxGeometry(0.1, CAB.height, Math.abs(CAB.backZ) + 0.1),
+      materials.steel,
+    );
+    wall.position.set(side * (CAB.halfWidth + 0.05), CAB.height / 2, CAB.backZ / 2);
+    cab.add(wall);
+
+    // Warm oak wainscot to break up the metal.
+    const wainscot = new THREE.Mesh(
+      new THREE.BoxGeometry(0.02, 0.85, Math.abs(CAB.backZ)),
+      materials.wood,
+    );
+    wainscot.position.set(side * CAB.halfWidth, 0.5, CAB.backZ / 2);
+    cab.add(wainscot);
+
+    const railing = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.022, 0.022, Math.abs(CAB.backZ) - 0.2, 12),
+      materials.brass,
+    );
+    railing.rotation.x = Math.PI / 2;
+    railing.position.set(side * (CAB.halfWidth - 0.06), 0.95, CAB.backZ / 2);
+    cab.add(railing);
+  });
+
+  const cabCeiling = new THREE.Mesh(new THREE.BoxGeometry(CAB.halfWidth * 2, 0.1, Math.abs(CAB.backZ)), materials.steelDark);
+  cabCeiling.position.set(0, CAB.height + 0.05, CAB.backZ / 2);
+  cab.add(cabCeiling);
+
+  const cabFixture = createCeilingFixture(materials, 1.5, 0.85);
+  cabFixture.position.set(0, CAB.height - 0.01, CAB.centerZ);
+  cab.add(cabFixture);
+
+  const cabFloor = new THREE.Mesh(new THREE.BoxGeometry(CAB.halfWidth * 2, 0.04, Math.abs(CAB.backZ)), materials.floorStone);
+  cabFloor.position.set(0, 0.02, CAB.backZ / 2);
+  cabFloor.receiveShadow = true;
+  cab.add(cabFloor);
+
+  // Engraved title on the back wall, seen on the way in.
+  const titleTex = createEngravedPlaque('THE ELEVATOR PITCH', 1200, 200, { fontSize: 86, letterSpacing: 10 });
+  const title = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.85, 0.31),
+    new THREE.MeshStandardMaterial({ map: titleTex, roughness: 0.3, metalness: 0.78 }),
+  );
+  title.position.set(0, 1.95, CAB.backZ + 0.002);
+  cab.add(title);
+
+  const titleRule = new THREE.Mesh(new THREE.PlaneGeometry(1.85, 0.012), materials.accentYellow);
+  titleRule.position.set(0, 1.75, CAB.backZ + 0.003);
+  cab.add(titleRule);
+
+  const subTex = createLabelTexture('Growth is designed, not guessed.', 900, 80, {
+    fontSize: 34,
+    color: '#4a6180',
+    weight: '400',
+  });
+  const sub = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.5, 0.13),
+    new THREE.MeshStandardMaterial({ map: subTex, roughness: 0.4, metalness: 0.5, transparent: true }),
+  );
+  sub.position.set(0, 1.6, CAB.backZ + 0.003);
+  cab.add(sub);
+
+  // ─── Button panel, on the right-hand wall ───
+  const panelGroup = new THREE.Group();
+  panelGroup.position.set(CAB.panelWallX, 1.52, CAB.centerZ);
+  panelGroup.rotation.y = -Math.PI / 2;
+  cab.add(panelGroup);
+
+  const panelPlate = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.72, 0.03), materials.steelDark);
+  panelGroup.add(panelPlate);
+
+  const panelSurround = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.78, 0.015), materials.brass);
+  panelSurround.position.z = -0.012;
+  panelGroup.add(panelSurround);
+
+  const panelHeaderTex = createEngravedPlaque('SELECT A FLOOR', 512, 80, { fontSize: 34, letterSpacing: 5 });
+  const panelHeader = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.44, 0.07),
+    new THREE.MeshStandardMaterial({ map: panelHeaderTex, roughness: 0.35, metalness: 0.7 }),
+  );
+  panelHeader.position.set(0, 0.29, 0.017);
+  panelGroup.add(panelHeader);
+
+  const buttons: ElevatorButton[] = [];
+  floors.forEach((floor, i) => {
+    const y = 0.17 - i * 0.115;
+
+    const bezel = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.038, 0.012, 24), materials.brass);
+    bezel.rotation.x = Math.PI / 2;
+    bezel.position.set(-0.19, y, 0.017);
+    panelGroup.add(bezel);
+
+    const dotMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.016, 24), materials.buttonOff.clone());
+    dotMesh.rotation.x = Math.PI / 2;
+    dotMesh.position.set(-0.19, y, 0.021);
+    panelGroup.add(dotMesh);
+
+    const numTex = createLabelTexture(floor.floorNumber, 128, 128, {
+      fontSize: 62,
+      color: '#183253',
+      weight: '600',
+    });
+    const num = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.036, 0.036),
+      new THREE.MeshBasicMaterial({ map: numTex, transparent: true }),
+    );
+    num.position.set(-0.19, y, 0.03);
+    panelGroup.add(num);
+
+    const lblTex = createLabelTexture(floor.buttonLabel, 420, 70, {
+      fontSize: 34,
+      color: '#e8ecf2',
+      align: 'left',
+      weight: '500',
+    });
+    const lbl = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.29, 0.048),
+      new THREE.MeshBasicMaterial({ map: lblTex, transparent: true }),
+    );
+    lbl.position.set(0.025, y, 0.017);
+    panelGroup.add(lbl);
+
+    const hitMesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.54, 0.105),
+      new THREE.MeshBasicMaterial({ visible: false }),
+    );
+    hitMesh.position.set(-0.02, y, 0.03);
+    hitMesh.userData = { kind: 'floorButton', floorId: floor.id };
+    panelGroup.add(hitMesh);
+
+    buttons.push({ dotMesh, hitMesh, floorId: floor.id, label: floor.buttonLabel, lit: false });
+  });
+
+  // ─── Telephone, directly below the panel ───
+  const telephone = createTelephone(materials);
+  telephone.group.position.set(CAB.panelWallX, 0.98, CAB.centerZ);
+  telephone.group.rotation.y = -Math.PI / 2;
+  cab.add(telephone.group);
+
+  // ─── Doors ───
+  const front = buildDoorPair(materials, CAB.frontZ, 1);
+  group.add(front.group);
+  const back = buildDoorPair(materials, CAB.backZ, -1);
+  group.add(back.group);
+
+  setDoorOpen(front.pair, 0);
+  setDoorOpen(back.pair, 0);
+
+  // Directory sign beside the lift, so the lobby explains itself.
+  const sign = createWallSign('LYNKRS · GROWTH SYSTEMS', 1.5, 0.24);
+  sign.position.set(-(CAB.halfWidth + 0.95), 1.62, 0.27);
+  group.add(sign);
+
   return {
-    group: exterior.group,
-    doorLeft: exterior.doorLeft,
-    doorRight: exterior.doorRight,
-    seam: exterior.seam,
-    logoPlane: exterior.logoPlane,
-    taglinePlane: exterior.taglinePlane,
-    interiorGroup: interior.interiorGroup,
-    buttons: interior.buttons,
-    ceilingLight: interior.ceilingLight,
-    interiorDoorLeft: interior.interiorDoorLeft,
-    interiorDoorRight: interior.interiorDoorRight,
+    group,
+    frontDoors: front.pair,
+    backDoors: back.pair,
+    buttons,
+    telephone,
+    logoPlane,
+    taglinePlane,
+    floorReadout,
+    setFloorReadout,
   };
 }
 
-export const ELEVATOR_CONSTANTS = { DOOR_HALF_WIDTH, DOOR_HEIGHT, DOOR_OPEN_OFFSET };
+export const ELEVATOR_PALETTE = PALETTE;

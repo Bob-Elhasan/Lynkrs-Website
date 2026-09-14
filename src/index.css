@@ -570,39 +570,68 @@ body { overflow-x: hidden; }
    the page behind the canvas even if a touch event slips past the handlers. */
 body.elevator-locked { overflow: hidden; overscroll-behavior: none; }
 
-.elevator-scene { position: fixed; inset: 0; z-index: 1; overflow: hidden; background: #0a0a0a; color: #e0e0e0; isolation: isolate; touch-action: none; overscroll-behavior: none; }
+.elevator-scene { position: fixed; inset: 0; z-index: 1; overflow: hidden; background: var(--lynkrs-cream); color: var(--lynkrs-ink); isolation: isolate; touch-action: none; overscroll-behavior: none; }
 .elevator-scene__canvas { position: absolute; inset: 0; }
 .elevator-scene__canvas canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 
-.elevator-scene__fade { position: absolute; inset: 0; z-index: 6; background: #050505; pointer-events: none; }
+.elevator-scene__fade { position: absolute; inset: 0; z-index: 6; background: #eef0f3; pointer-events: none; }
 
-.elevator-scene__loading { position: absolute; inset: 0; z-index: 50; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #0a0a0a; transition: opacity .8s ease; }
+.elevator-scene__loading { position: absolute; inset: 0; z-index: 50; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--lynkrs-cream); transition: opacity .7s ease; }
 .elevator-scene__loading.is-hidden { opacity: 0; pointer-events: none; }
-.elevator-scene__loading-track { width: 200px; height: 2px; margin-top: 24px; border-radius: 1px; overflow: hidden; background: #1a1a1a; }
-.elevator-scene__loading-fill { height: 100%; width: 0; background: #c8a85c; transition: width .3s ease; }
-.elevator-scene__loading-text { margin-top: 12px; font-size: 11px; letter-spacing: .3em; text-transform: uppercase; color: #666; }
+.elevator-scene__loading-mark { font-size: 15px; font-weight: 600; letter-spacing: .42em; color: var(--lynkrs-ink); }
+.elevator-scene__loading-track { width: 190px; height: 2px; margin-top: 22px; border-radius: 2px; overflow: hidden; background: rgba(24,50,83,.12); }
+.elevator-scene__loading-fill { height: 100%; width: 0; background: var(--brand); transition: width .3s ease; }
+.elevator-scene__loading-text { margin-top: 12px; font-size: 10px; letter-spacing: .28em; text-transform: uppercase; color: #6d7f96; }
 
-.elevator-scene__sound { position: absolute; z-index: 20; top: calc(20px + env(safe-area-inset-top)); right: calc(20px + env(safe-area-inset-right)); display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border: 1px solid rgba(200, 168, 92, .35); border-radius: 999px; background: rgba(10, 10, 10, .55); color: #c8a85c; backdrop-filter: blur(6px); transition: border-color .2s ease; }
-.elevator-scene__sound:hover { border-color: #c8a85c; }
+/* Overlays sit on frosted white so they stay legible against a bright scene. */
+.elevator-scene__sound,
+.elevator-scene__back { position: absolute; z-index: 20; display: inline-flex; align-items: center; justify-content: center; border: 1px solid rgba(24,50,83,.14); background: rgba(255,255,255,.82); color: var(--lynkrs-ink); backdrop-filter: blur(12px) saturate(1.2); box-shadow: 0 10px 26px -18px rgba(24,50,83,.7); transition: border-color .2s ease, background .2s ease; }
+.elevator-scene__sound { top: calc(20px + env(safe-area-inset-top)); right: calc(20px + env(safe-area-inset-right)); width: 44px; height: 44px; border-radius: 999px; }
+.elevator-scene__back { top: calc(20px + env(safe-area-inset-top)); left: calc(20px + env(safe-area-inset-left)); min-height: 44px; padding: 10px 18px; border-radius: 999px; font-size: 11px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; }
+.elevator-scene__sound:hover,
+.elevator-scene__back:hover { border-color: var(--brand); background: #fff; }
 
-.elevator-scene__back { position: absolute; z-index: 20; top: calc(20px + env(safe-area-inset-top)); left: calc(20px + env(safe-area-inset-left)); min-height: 44px; border: 1px solid rgba(200, 168, 92, .35); background: rgba(10, 10, 10, .55); color: #c8a85c; padding: 9px 18px; font-size: 12px; letter-spacing: .18em; text-transform: uppercase; backdrop-filter: blur(6px); transition: border-color .2s ease; }
-.elevator-scene__back:hover { border-color: #c8a85c; }
+.elevator-scene__floor-indicator { position: absolute; z-index: 15; top: calc(84px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); display: flex; align-items: baseline; gap: 12px; padding: 10px 20px; border-radius: 999px; border: 1px solid rgba(24,50,83,.12); background: rgba(255,255,255,.8); backdrop-filter: blur(12px); pointer-events: none; }
+.elevator-scene__floor-number { font-size: 20px; font-weight: 600; color: var(--brand); letter-spacing: .04em; }
+.elevator-scene__floor-label { font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: #5c7290; }
 
-.elevator-scene__floor-indicator { position: absolute; z-index: 15; top: 50%; right: calc(32px + env(safe-area-inset-right)); transform: translateY(-50%); text-align: right; pointer-events: none; }
-.elevator-scene__floor-number { display: block; font-family: Georgia, serif; font-weight: 200; font-size: 52px; color: #c8a85c; text-shadow: 0 0 24px rgba(200, 168, 92, .3); }
-.elevator-scene__floor-label { display: block; margin-top: 4px; font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: #8a8a86; }
+.elevator-scene__door-cta { position: absolute; z-index: 20; bottom: calc(40px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); }
+.elevator-scene__door-cta-link { display: inline-flex; align-items: center; gap: 10px; border: 1px solid transparent; border-radius: 999px; background: var(--brand); color: #fff; padding: 14px 26px; font-size: 12px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; text-decoration: none; box-shadow: 0 16px 34px -18px rgba(60,118,192,.9); transition: transform .2s ease, background .2s ease; }
+.elevator-scene__door-cta-link:hover { background: #2f63a6; transform: translateY(-2px); }
 
-.elevator-scene__door-cta { position: absolute; z-index: 20; bottom: calc(96px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); }
-.elevator-scene__door-cta-link { display: inline-flex; align-items: center; gap: 10px; border: 1px solid #c8a85c; background: rgba(10, 10, 10, .7); color: #c8a85c; padding: 12px 22px; font-size: 12px; letter-spacing: .14em; text-transform: uppercase; text-decoration: none; backdrop-filter: blur(6px); transition: background .2s ease; }
-.elevator-scene__door-cta-link:hover { background: rgba(200, 168, 92, .12); }
+.elevator-scene__hint { position: absolute; z-index: 15; bottom: calc(30px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none; }
+.elevator-scene__hint span:first-child { padding: 8px 16px; border-radius: 999px; background: rgba(255,255,255,.78); backdrop-filter: blur(10px); font-size: 10px; font-weight: 500; letter-spacing: .2em; text-transform: uppercase; color: #5c7290; }
+.elevator-scene__hint-arrow { width: 16px; height: 16px; border-right: 1.5px solid var(--brand); border-bottom: 1.5px solid var(--brand); transform: rotate(45deg); animation: elevator-hint-bounce 1.6s ease-in-out infinite; }
+@keyframes elevator-hint-bounce { 0%, 100% { transform: rotate(45deg) translateY(0); opacity: 1; } 50% { transform: rotate(45deg) translateY(6px); opacity: .35; } }
 
-.elevator-scene__hint { position: absolute; z-index: 15; bottom: calc(32px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none; }
-.elevator-scene__hint span:first-child { font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: #666; }
-.elevator-scene__hint-arrow { width: 18px; height: 18px; border-right: 1px solid #666; border-bottom: 1px solid #666; transform: rotate(45deg); animation: elevator-hint-bounce 1.5s ease-in-out infinite; }
-@keyframes elevator-hint-bounce { 0%, 100% { transform: rotate(45deg) translateY(0); opacity: 1; } 50% { transform: rotate(45deg) translateY(6px); opacity: .4; } }
+/* ─── Car telephone: the contact form it opens ─── */
+.elevator-dialog { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; padding: max(20px, env(safe-area-inset-top)) 20px max(20px, env(safe-area-inset-bottom)); }
+.elevator-dialog__scrim { position: absolute; inset: 0; border: 0; padding: 0; background: rgba(24,50,83,.42); backdrop-filter: blur(6px); animation: elevator-fade-in .25s ease both; }
+.elevator-dialog__panel { position: relative; width: min(520px, 100%); max-height: 100%; overflow-y: auto; padding: clamp(24px, 4vw, 38px); border-radius: 22px; background: #fff; box-shadow: 0 40px 80px -30px rgba(24,50,83,.55); animation: elevator-dialog-in .3s cubic-bezier(.23,1,.32,1) both; }
+.elevator-dialog__close { position: absolute; top: 16px; right: 16px; display: inline-flex; align-items: center; justify-content: center; width: 38px; height: 38px; border: 1px solid rgba(24,50,83,.12); border-radius: 999px; background: #fff; color: var(--lynkrs-ink); }
+.elevator-dialog__close:hover { border-color: var(--brand); }
+.elevator-dialog__kicker { margin: 0; font-size: 10px; font-weight: 600; letter-spacing: .24em; text-transform: uppercase; color: var(--brand); }
+.elevator-dialog__title { margin: 8px 0 0; font-size: clamp(28px, 5vw, 38px); font-weight: 600; letter-spacing: -.02em; color: var(--lynkrs-ink); }
+.elevator-dialog__lede { margin: 12px 0 0; font-size: 14px; line-height: 1.6; color: #5c7290; }
+.elevator-dialog__form { display: grid; gap: 14px; margin-top: 22px; }
+.elevator-dialog__form label { display: grid; gap: 6px; font-size: 11px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; color: #5c7290; }
+.elevator-dialog__form input,
+.elevator-dialog__form textarea { width: 100%; padding: 12px 14px; border: 1px solid rgba(24,50,83,.16); border-radius: 12px; background: #fbfcfd; font-size: 15px; font-family: inherit; letter-spacing: normal; text-transform: none; color: var(--lynkrs-ink); }
+.elevator-dialog__form input:focus,
+.elevator-dialog__form textarea:focus { outline: 2px solid color-mix(in srgb, var(--brand) 40%, transparent); outline-offset: 1px; border-color: var(--brand); }
+.elevator-dialog__form button { margin-top: 4px; padding: 14px 20px; border: 0; border-radius: 999px; background: var(--brand); color: #fff; font-size: 12px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; }
+.elevator-dialog__form button:hover { background: #2f63a6; }
+.elevator-dialog__foot { margin: 18px 0 0; font-size: 12px; color: #5c7290; }
+.elevator-dialog__foot a { color: var(--brand); }
+@keyframes elevator-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes elevator-dialog-in { from { opacity: 0; transform: translateY(14px) scale(.98); } to { opacity: 1; transform: none; } }
 
 @media (max-width: 720px) {
-  .elevator-scene__floor-number { font-size: 40px; }
-  .elevator-scene__door-cta { bottom: calc(128px + env(safe-area-inset-bottom)); left: 20px; right: 20px; transform: none; }
+  .elevator-scene__back { font-size: 10px; padding: 10px 14px; }
+  .elevator-scene__floor-indicator { padding: 8px 16px; }
+  .elevator-scene__door-cta { left: 20px; right: 20px; transform: none; }
   .elevator-scene__door-cta-link { justify-content: center; width: 100%; }
 }
+
+/* Floor indicator on the inner pages, echoing the lift's readout. */
+.floor-tag { display: inline-flex; align-items: center; gap: .4em; padding: .3em .7em; border: 1px solid currentColor; border-radius: 999px; font-variant-numeric: tabular-nums; letter-spacing: .14em; opacity: .9; }

@@ -197,7 +197,66 @@ async function synthCreak() {
   });
 }
 
-type EffectName = 'door' | 'click' | 'hum' | 'rumble' | 'ding' | 'footstep' | 'creak';
+/**
+ * Elevator music: a slow ii-V-I-vi in F, voiced as soft triangle pads over a
+ * rounded bass, with a little vibrato so it doesn't sit perfectly still. Loops
+ * seamlessly because the last chord resolves back to the first.
+ */
+async function synthMusic(duration = 16) {
+  return synth(duration, (ctx) => {
+    const master = ctx.createGain();
+    master.gain.value = 0.16;
+
+    // Gentle low-pass keeps it behind the action rather than on top of it.
+    const tone = ctx.createBiquadFilter();
+    tone.type = 'lowpass';
+    tone.frequency.value = 1600;
+    tone.Q.value = 0.4;
+    master.connect(tone).connect(ctx.destination);
+
+    const chords = [
+      [174.61, 220.0, 261.63, 329.63], // Gm9-ish
+      [196.0, 246.94, 293.66, 349.23], // C11
+      [174.61, 261.63, 329.63, 392.0], // Fmaj9
+      [146.83, 220.0, 261.63, 349.23], // Dm7
+    ];
+    const bars = 4;
+    const barLength = duration / bars;
+
+    chords.forEach((chord, bar) => {
+      const start = bar * barLength;
+      const end = start + barLength;
+
+      chord.forEach((freq, voice) => {
+        const osc = ctx.createOscillator();
+        osc.type = voice === 0 ? 'sine' : 'triangle';
+        osc.frequency.value = freq;
+
+        // Slow detune drift, so the pad breathes.
+        const lfo = ctx.createOscillator();
+        lfo.frequency.value = 0.18 + voice * 0.05;
+        const lfoGain = ctx.createGain();
+        lfoGain.gain.value = 1.6;
+        lfo.connect(lfoGain).connect(osc.detune);
+        lfo.start(start);
+        lfo.stop(end + 0.4);
+
+        const gain = ctx.createGain();
+        const level = voice === 0 ? 0.5 : 0.26 - voice * 0.04;
+        gain.gain.setValueAtTime(0.0001, start);
+        gain.gain.linearRampToValueAtTime(level, start + barLength * 0.35);
+        gain.gain.setValueAtTime(level, end - barLength * 0.3);
+        gain.gain.linearRampToValueAtTime(0.0001, end + 0.35);
+
+        osc.connect(gain).connect(master);
+        osc.start(start);
+        osc.stop(end + 0.4);
+      });
+    });
+  });
+}
+
+type EffectName = 'door' | 'click' | 'hum' | 'rumble' | 'ding' | 'footstep' | 'creak' | 'music';
 
 export class SoundManager {
   private howls = new Map<EffectName, Howl>();
@@ -205,12 +264,15 @@ export class SoundManager {
   private ready: Promise<void> | null = null;
   private enabled = false;
   private humId: number | null = null;
+  private musicId: number | null = null;
+  /** Remembered across mute/unmute, so the music resumes where it belongs. */
+  private musicWanted = false;
 
   /** Synthesizes and decodes every effect once. Safe to call multiple times. */
   init() {
     if (this.ready) return this.ready;
     this.ready = (async () => {
-      const [door, click, hum, rumble, ding, footstep, creak] = await Promise.all([
+      const [door, click, hum, rumble, ding, footstep, creak, music] = await Promise.all([
         synthDoorSlide(),
         synthClick(),
         synthHum(4),
@@ -218,12 +280,14 @@ export class SoundManager {
         synthDing(),
         synthFootstep(),
         synthCreak(),
+        synthMusic(16),
       ]);
+      const volumes: Partial<Record<EffectName, number>> = { hum: 0.4, music: 0.55 };
       const register = (name: EffectName, result: SynthResult, loop = false) => {
         this.urls.push(result.blobUrl);
         this.howls.set(
           name,
-          new Howl({ src: [result.blobUrl], format: ['wav'], loop, volume: name === 'hum' ? 0.5 : 0.8 }),
+          new Howl({ src: [result.blobUrl], format: ['wav'], loop, volume: volumes[name] ?? 0.8 }),
         );
       };
       register('door', door);
@@ -233,6 +297,7 @@ export class SoundManager {
       register('ding', ding);
       register('footstep', footstep);
       register('creak', creak);
+      register('music', music, true);
     })();
     return this.ready;
   }
@@ -240,16 +305,23 @@ export class SoundManager {
   setEnabled(enabled: boolean) {
     this.enabled = enabled;
     if (enabled) {
-      this.init().then(() => {
+      void this.init().then(() => {
         if (!this.enabled) return;
         const hum = this.howls.get('hum');
         if (hum && this.humId === null) this.humId = hum.play();
+        // Unmuting inside the car should bring the music back with it.
+        if (this.musicWanted) this.startMusic();
       });
     } else {
       const hum = this.howls.get('hum');
       if (hum && this.humId !== null) {
         hum.stop(this.humId);
         this.humId = null;
+      }
+      const music = this.howls.get('music');
+      if (music && this.musicId !== null) {
+        music.stop(this.musicId);
+        this.musicId = null;
       }
     }
   }
@@ -285,7 +357,32 @@ export class SoundManager {
     this.play('creak', pan);
   }
 
+  /** Elevator music, faded in while the visitor is inside the car. */
+  startMusic() {
+    this.musicWanted = true;
+    if (!this.enabled) return;
+    void this.init().then(() => {
+      if (!this.enabled || !this.musicWanted) return;
+      const music = this.howls.get('music');
+      if (!music || this.musicId !== null) return;
+      this.musicId = music.play();
+      music.volume(0, this.musicId);
+      music.fade(0, 0.55, 1200, this.musicId);
+    });
+  }
+
+  stopMusic() {
+    this.musicWanted = false;
+    const music = this.howls.get('music');
+    if (!music || this.musicId === null) return;
+    const id = this.musicId;
+    this.musicId = null;
+    music.fade(music.volume(id) as number, 0, 700, id);
+    window.setTimeout(() => music.stop(id), 760);
+  }
+
   dispose() {
+    this.stopMusic();
     this.setEnabled(false);
     this.howls.forEach((h) => h.unload());
     this.howls.clear();
