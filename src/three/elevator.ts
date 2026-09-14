@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 import type { SceneMaterials } from './materials';
-import { PALETTE } from './palette';
-import { createEngravedPlaque, createLabelTexture } from './textures';
-import { createCeilingFixture, createPlant, createTelephone, createWallSign, type TelephoneBuild } from './props';
+import { createEngravedAlpha, createLabelTexture } from './textures';
+import { createCeilingFixture, createPlant, createPlaque, createTelephone, type TelephoneBuild } from './props';
+import type { Theme } from './theme';
+import type { SceneAssets } from './assets';
 import type { FloorContent } from './content';
 
 /**
@@ -79,7 +80,6 @@ function buildDoorPair(materials: SceneMaterials, z: number, facing: 1 | -1): { 
   left.position.set(-CAB.doorClosedX, CAB.doorHeight / 2, z);
   const right = buildDoorLeaf(materials, leafWidth);
   right.position.set(CAB.doorClosedX, CAB.doorHeight / 2, z);
-  right.rotation.y = Math.PI;
 
   group.add(left, right);
 
@@ -116,12 +116,17 @@ export function setDoorOpen(pair: DoorPair, amount: number) {
   pair.right.position.x = CAB.doorClosedX + travel * amount;
 }
 
-export function buildElevator(materials: SceneMaterials, floors: FloorContent[]): ElevatorBuild {
+export function buildElevator(
+  materials: SceneMaterials,
+  floors: FloorContent[],
+  theme: Theme,
+  assets: SceneAssets,
+): ElevatorBuild {
   const group = new THREE.Group();
 
   // ─── Lobby side: wall the lift sits in, plus greenery ───
   const lobbyWallHeight = 3.6;
-  const lobbyWallWidth = 9;
+  const lobbyWallWidth = 14.4;
   const jambWidth = (lobbyWallWidth - CAB.halfWidth * 2 - 0.3) / 2;
 
   [-1, 1].forEach((side) => {
@@ -143,10 +148,10 @@ export function buildElevator(materials: SceneMaterials, floors: FloorContent[])
   band.position.set(0, CAB.doorHeight + 0.42, 0.26);
   group.add(band);
 
-  const readoutTex = createLabelTexture('G', 256, 128, { fontSize: 74, color: '#cdcd00', weight: '600' });
+  const readoutTex = createLabelTexture('G', 256, 128, { fontSize: 74, color: theme.highlight, weight: '600' });
   const floorReadout = new THREE.Mesh(
     new THREE.PlaneGeometry(0.34, 0.17),
-    new THREE.MeshBasicMaterial({ map: readoutTex, transparent: true }),
+    new THREE.MeshBasicMaterial({ map: readoutTex, transparent: true, toneMapped: false }),
   );
   floorReadout.position.set(0, CAB.doorHeight + 0.42, 0.285);
   group.add(floorReadout);
@@ -155,31 +160,44 @@ export function buildElevator(materials: SceneMaterials, floors: FloorContent[])
     floorReadout.material.map?.dispose();
     floorReadout.material.map = createLabelTexture(text, 256, 128, {
       fontSize: 74,
-      color: '#cdcd00',
+      color: theme.highlight,
       weight: '600',
     });
     floorReadout.material.needsUpdate = true;
   };
 
-  // Engraved brand lockup on the closed doors, spanning both leaves.
-  const logoTex = createEngravedPlaque('LYNKRS', 1024, 240, { fontSize: 128, letterSpacing: 18 });
+  // The real Lynkrs mark, etched across the closed doors. Kept as a lit
+  // material rather than an emissive decal so it behaves like brushed metal.
   const logoPlane = new THREE.Mesh(
-    new THREE.PlaneGeometry(1.5, 0.35),
-    new THREE.MeshStandardMaterial({ map: logoTex, roughness: 0.28, metalness: 0.8, transparent: true }),
+    new THREE.PlaneGeometry(1.46, 0.507),
+    new THREE.MeshStandardMaterial({
+      map: assets.logoWhite,
+      transparent: true,
+      roughness: 0.34,
+      metalness: 0.75,
+      color: theme.name === 'dark' ? 0xdde4ed : 0x2a3a50,
+      depthWrite: false,
+    }),
   );
-  logoPlane.position.set(0, 1.72, 0.041);
+  logoPlane.position.set(0, 1.78, 0.058);
   group.add(logoPlane);
 
-  const taglineTex = createLabelTexture('Turn motion into momentum.', 900, 90, {
-    fontSize: 34,
-    color: '#4a6180',
-    weight: '400',
+  const taglineTex = createEngravedAlpha('TURN MOTION INTO MOMENTUM', 1024, 96, {
+    fontSize: 44,
+    letterSpacing: 6,
+    theme,
   });
   const taglinePlane = new THREE.Mesh(
-    new THREE.PlaneGeometry(1.35, 0.135),
-    new THREE.MeshStandardMaterial({ map: taglineTex, roughness: 0.4, metalness: 0.6, transparent: true }),
+    new THREE.PlaneGeometry(1.35, 0.127),
+    new THREE.MeshStandardMaterial({
+      map: taglineTex,
+      roughness: 0.42,
+      metalness: 0.6,
+      transparent: true,
+      depthWrite: false,
+    }),
   );
-  taglinePlane.position.set(0, 1.46, 0.041);
+  taglinePlane.position.set(0, 1.46, 0.058);
   group.add(taglinePlane);
 
   // Plants flanking the lift, as asked.
@@ -190,13 +208,13 @@ export function buildElevator(materials: SceneMaterials, floors: FloorContent[])
   });
 
   // Lobby floor and ceiling, so the space reads as a room rather than a void.
-  const lobbyFloor = new THREE.Mesh(new THREE.PlaneGeometry(14, 16), materials.floorStone);
+  const lobbyFloor = new THREE.Mesh(new THREE.PlaneGeometry(14.4, 16), materials.floorStone);
   lobbyFloor.rotation.x = -Math.PI / 2;
   lobbyFloor.position.z = 7;
   lobbyFloor.receiveShadow = true;
   group.add(lobbyFloor);
 
-  const lobbyCeiling = new THREE.Mesh(new THREE.PlaneGeometry(14, 16), materials.wallCream);
+  const lobbyCeiling = new THREE.Mesh(new THREE.PlaneGeometry(14.4, 16), materials.ceiling);
   lobbyCeiling.rotation.x = Math.PI / 2;
   lobbyCeiling.position.set(0, lobbyWallHeight, 7);
   group.add(lobbyCeiling);
@@ -218,9 +236,13 @@ export function buildElevator(materials: SceneMaterials, floors: FloorContent[])
   const cab = new THREE.Group();
   group.add(cab);
 
-  const backWall = new THREE.Mesh(new THREE.BoxGeometry(CAB.halfWidth * 2, CAB.height, 0.1), materials.steel);
-  backWall.position.set(0, CAB.height / 2, CAB.backZ - 0.05);
-  cab.add(backWall);
+  const backLintelHeight = CAB.height - CAB.doorHeight;
+  const backLintel = new THREE.Mesh(
+    new THREE.BoxGeometry(CAB.halfWidth * 2, backLintelHeight, 0.1),
+    materials.steel,
+  );
+  backLintel.position.set(0, CAB.doorHeight + backLintelHeight / 2, CAB.backZ - 0.05);
+  cab.add(backLintel);
 
   [-1, 1].forEach((side) => {
     const wall = new THREE.Mesh(
@@ -232,19 +254,23 @@ export function buildElevator(materials: SceneMaterials, floors: FloorContent[])
 
     // Warm oak wainscot to break up the metal.
     const wainscot = new THREE.Mesh(
-      new THREE.BoxGeometry(0.02, 0.62, Math.abs(CAB.backZ)),
+      new THREE.BoxGeometry(0.02, 0.34, Math.abs(CAB.backZ)),
       materials.wood,
     );
-    wainscot.position.set(side * CAB.halfWidth, 0.35, CAB.backZ / 2);
+    wainscot.position.set(side * CAB.halfWidth, 0.2, CAB.backZ / 2);
     cab.add(wainscot);
 
-    const railing = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.022, 0.022, Math.abs(CAB.backZ) - 0.2, 12),
-      materials.brass,
-    );
-    railing.rotation.x = Math.PI / 2;
-    railing.position.set(side * (CAB.halfWidth - 0.06), 0.95, CAB.backZ / 2);
-    cab.add(railing);
+    // Only on the left: the right-hand wall carries the panel and telephone,
+    // and a rail across them reads as a mistake.
+    if (side === -1) {
+      const railing = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.022, 0.022, Math.abs(CAB.backZ) - 0.2, 12),
+        materials.brass,
+      );
+      railing.rotation.x = Math.PI / 2;
+      railing.position.set(side * (CAB.halfWidth - 0.06), 0.95, CAB.backZ / 2);
+      cab.add(railing);
+    }
   });
 
   const cabCeiling = new THREE.Mesh(new THREE.BoxGeometry(CAB.halfWidth * 2, 0.1, Math.abs(CAB.backZ)), materials.steelDark);
@@ -260,29 +286,21 @@ export function buildElevator(materials: SceneMaterials, floors: FloorContent[])
   cabFloor.receiveShadow = true;
   cab.add(cabFloor);
 
-  // Engraved title on the back wall, seen on the way in.
-  const titleTex = createEngravedPlaque('THE ELEVATOR PITCH', 1200, 200, { fontSize: 86, letterSpacing: 10 });
-  const title = new THREE.Mesh(
-    new THREE.PlaneGeometry(1.85, 0.31),
-    new THREE.MeshStandardMaterial({ map: titleTex, roughness: 0.3, metalness: 0.78 }),
-  );
-  title.position.set(0, 1.95, CAB.backZ + 0.002);
+  // Engraved title on the lintel above the rear doors: seen on the way in,
+  // and clear of the opening on the way out.
+  const title = createPlaque(materials, 'THE ELEVATOR PITCH', 1.9, 0.24, theme, 62);
+  title.position.set(0, CAB.doorHeight + backLintelHeight * 0.55, CAB.backZ + 0.012);
   cab.add(title);
 
-  const titleRule = new THREE.Mesh(new THREE.PlaneGeometry(1.85, 0.012), materials.accentYellow);
-  titleRule.position.set(0, 1.75, CAB.backZ + 0.003);
+  const titleRule = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 0.01), materials.accentYellow);
+  titleRule.position.set(0, CAB.doorHeight + 0.09, CAB.backZ + 0.005);
   cab.add(titleRule);
 
-  const subTex = createLabelTexture('Growth is designed, not guessed.', 900, 80, {
-    fontSize: 34,
-    color: '#4a6180',
-    weight: '400',
-  });
-  const sub = new THREE.Mesh(
-    new THREE.PlaneGeometry(1.5, 0.13),
-    new THREE.MeshStandardMaterial({ map: subTex, roughness: 0.4, metalness: 0.5, transparent: true }),
-  );
-  sub.position.set(0, 1.6, CAB.backZ + 0.003);
+  // The line that goes with it lives on the wall opposite the panel, so the
+  // car has something to say in both directions.
+  const sub = createPlaque(materials, 'GROWTH IS DESIGNED, NOT GUESSED', 1.5, 0.16, theme, 52);
+  sub.position.set(-(CAB.halfWidth - 0.008), 1.62, CAB.centerZ);
+  sub.rotation.y = Math.PI / 2;
   cab.add(sub);
 
   // ─── Button panel, on the right-hand wall ───
@@ -293,45 +311,57 @@ export function buildElevator(materials: SceneMaterials, floors: FloorContent[])
 
   // Navy plate: white labels need something dark behind them, and light
   // steel-on-steel washed out completely.
-  const panelPlate = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.72, 0.03), materials.wallNavy);
+  const panelPlate = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.86, 0.03), materials.wallNavy);
   panelGroup.add(panelPlate);
 
-  const panelSurround = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.78, 0.015), materials.brass);
+  const panelSurround = new THREE.Mesh(new THREE.BoxGeometry(0.74, 0.92, 0.015), materials.brass);
   panelSurround.position.z = -0.012;
   panelGroup.add(panelSurround);
 
-  const panelHeaderTex = createEngravedPlaque('SELECT A FLOOR', 512, 80, { fontSize: 34, letterSpacing: 5 });
+  const headerTex = createLabelTexture('SELECT A FLOOR', 520, 70, {
+    fontSize: 34,
+    color: '#e8eef6',
+    weight: '600',
+    letterSpacing: 7,
+  });
   const panelHeader = new THREE.Mesh(
-    new THREE.PlaneGeometry(0.44, 0.07),
-    new THREE.MeshStandardMaterial({ map: panelHeaderTex, roughness: 0.35, metalness: 0.7 }),
+    new THREE.PlaneGeometry(0.52, 0.07),
+    new THREE.MeshBasicMaterial({ map: headerTex, transparent: true, toneMapped: false }),
   );
-  panelHeader.position.set(0, 0.29, 0.017);
+  panelHeader.position.set(0, 0.35, 0.018);
   panelGroup.add(panelHeader);
+
+  const headerRule = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.52, 0.005),
+    new THREE.MeshBasicMaterial({ color: 0xcdcd00, toneMapped: false }),
+  );
+  headerRule.position.set(0, 0.297, 0.018);
+  panelGroup.add(headerRule);
 
   const buttons: ElevatorButton[] = [];
   floors.forEach((floor, i) => {
-    const y = 0.17 - i * 0.115;
+    const y = 0.2 - i * 0.14;
 
-    const bezel = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.038, 0.012, 24), materials.brass);
+    const bezel = new THREE.Mesh(new THREE.CylinderGeometry(0.046, 0.046, 0.012, 24), materials.brass);
     bezel.rotation.x = Math.PI / 2;
-    bezel.position.set(-0.19, y, 0.017);
+    bezel.position.set(-0.23, y, 0.017);
     panelGroup.add(bezel);
 
-    const dotMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.016, 24), materials.buttonOff.clone());
+    const dotMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.037, 0.037, 0.016, 24), materials.buttonOff.clone());
     dotMesh.rotation.x = Math.PI / 2;
     dotMesh.position.set(-0.19, y, 0.021);
     panelGroup.add(dotMesh);
 
     const numTex = createLabelTexture(floor.floorNumber, 128, 128, {
       fontSize: 62,
-      color: '#183253',
+      color: '#eef2f7',
       weight: '600',
     });
     const num = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.036, 0.036),
-      new THREE.MeshBasicMaterial({ map: numTex, transparent: true }),
+      new THREE.PlaneGeometry(0.044, 0.044),
+      new THREE.MeshBasicMaterial({ map: numTex, transparent: true, toneMapped: false }),
     );
-    num.position.set(-0.19, y, 0.03);
+    num.position.set(-0.23, y, 0.031);
     panelGroup.add(num);
 
     const lblTex = createLabelTexture(floor.buttonLabel, 420, 70, {
@@ -341,17 +371,17 @@ export function buildElevator(materials: SceneMaterials, floors: FloorContent[])
       weight: '500',
     });
     const lbl = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.29, 0.048),
-      new THREE.MeshBasicMaterial({ map: lblTex, transparent: true }),
+      new THREE.PlaneGeometry(0.38, 0.064),
+      new THREE.MeshBasicMaterial({ map: lblTex, transparent: true, toneMapped: false }),
     );
-    lbl.position.set(0.025, y, 0.017);
+    lbl.position.set(0.05, y, 0.017);
     panelGroup.add(lbl);
 
     const hitMesh = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.54, 0.105),
+      new THREE.PlaneGeometry(0.66, 0.13),
       new THREE.MeshBasicMaterial({ visible: false }),
     );
-    hitMesh.position.set(-0.02, y, 0.03);
+    hitMesh.position.set(-0.02, y, 0.035);
     hitMesh.userData = { kind: 'floorButton', floorId: floor.id };
     panelGroup.add(hitMesh);
 
@@ -359,8 +389,8 @@ export function buildElevator(materials: SceneMaterials, floors: FloorContent[])
   });
 
   // ─── Telephone, directly below the panel ───
-  const telephone = createTelephone(materials);
-  telephone.group.position.set(CAB.panelWallX, 0.9, CAB.centerZ);
+  const telephone = createTelephone(materials, 1.28);
+  telephone.group.position.set(CAB.panelWallX, 0.86, CAB.centerZ);
   telephone.group.rotation.y = -Math.PI / 2;
   cab.add(telephone.group);
 
@@ -374,7 +404,7 @@ export function buildElevator(materials: SceneMaterials, floors: FloorContent[])
   setDoorOpen(back.pair, 0);
 
   // Directory sign beside the lift, so the lobby explains itself.
-  const sign = createWallSign('LYNKRS · GROWTH SYSTEMS', 1.5, 0.24);
+  const sign = createPlaque(materials, 'GROWTH SYSTEMS', 1.5, 0.22, theme, 80);
   sign.position.set(-(CAB.halfWidth + 0.95), 1.62, 0.27);
   group.add(sign);
 
@@ -391,4 +421,3 @@ export function buildElevator(materials: SceneMaterials, floors: FloorContent[])
   };
 }
 
-export const ELEVATOR_PALETTE = PALETTE;

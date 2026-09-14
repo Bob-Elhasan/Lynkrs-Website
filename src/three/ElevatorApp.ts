@@ -7,15 +7,16 @@ import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
 import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
 import gsap from 'gsap';
 
-import { buildMaterials, disposeMaterials, type SceneMaterials } from './materials';
-import { createProceduralEnvMap, setTextureQuality } from './textures';
+import { applyThemeToMaterials, buildMaterials, disposeMaterials, type SceneMaterials } from './materials';
+import { createProceduralEnvMap, createSlideTexture, setTextureQuality } from './textures';
+import { loadAssets, type SceneAssets } from './assets';
 import { buildElevator, setDoorOpen, CAB, type ElevatorBuild } from './elevator';
 import { buildCorridor, CORRIDOR, type CorridorBuild, type CorridorDoor } from './corridor';
 import { floors, type DoorContent, type FloorContent } from './content';
 import { SoundManager } from './audio';
 import { disposeObject3D } from './dispose';
 import { CameraRig, EYE_HEIGHT } from './cameraRig';
-import { PALETTE } from './palette';
+import { DARK_THEME, LIGHT_THEME, lerpTheme, type Theme, type ThemeName } from './theme';
 
 export type Phase = 'lobby' | 'entering' | 'panel' | 'travelling' | 'corridor' | 'room';
 
@@ -25,15 +26,15 @@ export type ElevatorCallbacks = {
   onPhaseChange: (phase: Phase) => void;
   onFloorChange: (floor: FloorContent | null) => void;
   onDoorChange: (door: DoorContent | null) => void;
+  onSlideChange: (index: number, total: number) => void;
   onFadeChange: (opacity: number) => void;
+  onThemeChange: (theme: ThemeName) => void;
   onContactRequest: () => void;
 };
 
 const SCROLL_SPEED = 0.00085;
 const TOUCH_SPEED = 0.0032;
 const TOUCH_DEADZONE = 12;
-
-/** Lobby scroll runs 0 → 3: doors open, walk in, turn to the panel. */
 const LOBBY_MAX = 3;
 
 function smoothstep(t: number) {
@@ -42,6 +43,14 @@ function smoothstep(t: number) {
 }
 function clamp(v: number, min: number, max: number) {
   return Math.max(min, Math.min(max, v));
+}
+
+/**
+ * Frame-rate corrected easing. A flat per-frame fraction makes the whole
+ * journey run at half speed on a 30fps phone and double on a 120Hz panel.
+ */
+function ease(current: number, target: number, rate: number, dt: number) {
+  return current + (target - current) * (1 - Math.pow(1 - rate, Math.min(dt, 0.1) * 60));
 }
 
 export class ElevatorApp {
@@ -56,14 +65,26 @@ export class ElevatorApp {
   private bloomPass!: UnrealBloomPass;
   private fxaaPass!: ShaderPass;
 
+  private assets!: SceneAssets;
   private materials!: SceneMaterials;
   private elevator!: ElevatorBuild;
   private corridors = new Map<FloorContent['id'], CorridorBuild>();
   private activeCorridor: CorridorBuild | null = null;
   private openDoor: CorridorDoor | null = null;
 
-  private sound = new SoundManager();
+  // ─── Lighting, held so a theme change can re-level it ───
+  private hemi!: THREE.HemisphereLight;
+  private ambient!: THREE.AmbientLight;
+  private key!: THREE.DirectionalLight;
+  private cabLight!: THREE.PointLight;
+  private panelFill!: THREE.PointLight;
+  private lobbyLight!: THREE.PointLight;
+  private envMaps: Partial<Record<ThemeName, THREE.Texture>> = {};
 
+  private theme: Theme = LIGHT_THEME;
+  private themeTween: gsap.core.Tween | null = null;
+
+  private sound = new SoundManager();
   private raycaster = new THREE.Raycaster();
   private pointer = new THREE.Vector2();
 
@@ -72,6 +93,10 @@ export class ElevatorApp {
   private lobbyTarget = 0;
   private corridorProgress = 0;
   private corridorTarget = 0;
+  /** Continuous position through the open room's slide deck. */
+  private roomProgress = 0;
+  private roomTarget = 0;
+  private slideIndex = -1;
   private selectedFloor: FloorContent | null = null;
   private inputLocked = false;
   private lastFootstepZ = 0;
@@ -92,10 +117,8 @@ export class ElevatorApp {
     this.callbacks = callbacks;
     this.isMobile = window.matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
 
-    // A light room, not a void: the fog now tints toward cream so distance
-    // reads as air rather than darkness.
-    this.scene.background = new THREE.Color(0xc4ccd6);
-    this.scene.fog = new THREE.Fog(0xc4ccd6, 20, 64);
+    this.scene.background = new THREE.Color(this.theme.background);
+    this.scene.fog = new THREE.Fog(this.theme.fog.colour, this.theme.fog.near, this.theme.fog.far);
 
     const camera = new THREE.PerspectiveCamera(
       this.isMobile ? 68 : 58,
@@ -112,9 +135,7 @@ export class ElevatorApp {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    // Light scene, so exposure sits under 1: the cream needs headroom or it
-    // clips to white and the whole set flattens out.
-    this.renderer.toneMappingExposure = 0.88;
+    this.renderer.toneMappingExposure = this.theme.exposure;
     this.renderer.domElement.style.touchAction = 'none';
     container.appendChild(this.renderer.domElement);
 
@@ -140,9 +161,10 @@ export class ElevatorApp {
     this.composer = new EffectComposer(this.renderer);
     this.composer.addPass(new RenderPass(this.scene, this.camera));
 
-    // Light scene, so bloom is a soft lift on the fixtures only.
+    // Restrained: bloom is here to bleed the fixtures and the projection, not
+    // to glaze the whole image.
     const bloomScale = this.isMobile ? 0.5 : 1;
-    this.bloomPass = new UnrealBloomPass(new THREE.Vector2(w * bloomScale, h * bloomScale), 0.22, 0.5, 0.92);
+    this.bloomPass = new UnrealBloomPass(new THREE.Vector2(w * bloomScale, h * bloomScale), 0.22, 0.5, 0.95);
     this.composer.addPass(this.bloomPass);
 
     this.fxaaPass = new ShaderPass(FXAAShader);
@@ -153,22 +175,25 @@ export class ElevatorApp {
   }
 
   private async boot() {
-    this.callbacks.onLoadingProgress(10);
+    this.callbacks.onLoadingProgress(6);
 
-    const envMap = createProceduralEnvMap(this.renderer);
-    this.scene.environment = envMap;
-    this.callbacks.onLoadingProgress(30);
+    // Real PBR maps, fetched up front — they are what stop surfaces reading
+    // as flat colour.
+    this.assets = await loadAssets(this.renderer, (f) => this.callbacks.onLoadingProgress(6 + f * 54));
 
-    this.materials = buildMaterials(envMap);
-    this.callbacks.onLoadingProgress(55);
+    this.envMaps.light = createProceduralEnvMap(this.renderer, LIGHT_THEME);
+    this.envMaps.dark = createProceduralEnvMap(this.renderer, DARK_THEME);
+    this.scene.environment = this.envMaps[this.theme.name]!;
+    this.callbacks.onLoadingProgress(72);
 
+    this.materials = buildMaterials(this.assets, this.scene.environment, this.theme);
     this.buildLighting();
-    this.elevator = buildElevator(this.materials, floors);
+    this.callbacks.onLoadingProgress(84);
+
+    this.elevator = buildElevator(this.materials, floors, this.theme, this.assets);
     this.scene.add(this.elevator.group);
-    this.callbacks.onLoadingProgress(85);
 
     void this.sound.init();
-
     this.callbacks.onLoadingProgress(100);
     this.callbacks.onReady();
 
@@ -177,37 +202,112 @@ export class ElevatorApp {
   }
 
   private buildLighting() {
-    // A soft sky/ground fill does most of the work; everything else is
-    // deliberately restrained so surfaces keep their separation.
-    this.scene.add(new THREE.HemisphereLight(0xffffff, 0x9aa6b4, 0.55));
-    this.scene.add(new THREE.AmbientLight(0xffffff, 0.12));
+    const l = this.theme.light;
+    this.hemi = new THREE.HemisphereLight(l.hemiSky, l.hemiGround, l.hemiIntensity);
+    this.ambient = new THREE.AmbientLight(0xffffff, l.ambient);
+    this.scene.add(this.hemi, this.ambient);
 
-    const key = new THREE.DirectionalLight(0xfff6ea, 1.55);
-    key.position.set(3.5, 6, 6);
-    key.castShadow = true;
-    key.shadow.mapSize.set(this.isMobile ? 1024 : 2048, this.isMobile ? 1024 : 2048);
-    key.shadow.camera.near = 0.5;
-    key.shadow.camera.far = 30;
-    key.shadow.camera.left = -8;
-    key.shadow.camera.right = 8;
-    key.shadow.camera.top = 8;
-    key.shadow.camera.bottom = -8;
-    key.shadow.bias = -0.0012;
-    key.shadow.normalBias = 0.02;
-    this.scene.add(key, key.target);
+    this.key = new THREE.DirectionalLight(0xfff4e6, l.keyIntensity);
+    this.key.position.set(4, 7, 7);
+    this.key.castShadow = true;
+    this.key.shadow.mapSize.set(this.isMobile ? 1024 : 2048, this.isMobile ? 1024 : 2048);
+    this.key.shadow.camera.near = 0.5;
+    this.key.shadow.camera.far = 34;
+    this.key.shadow.camera.left = -9;
+    this.key.shadow.camera.right = 9;
+    this.key.shadow.camera.top = 9;
+    this.key.shadow.camera.bottom = -9;
+    this.key.shadow.bias = -0.0009;
+    this.key.shadow.normalBias = 0.022;
+    this.key.shadow.radius = 3;
+    this.scene.add(this.key, this.key.target);
 
-    // Cool bounce from the lobby glazing, warm fill inside the car.
-    const bounce = new THREE.DirectionalLight(PALETTE.blueLight, 0.22);
-    bounce.position.set(-5, 3, 4);
-    this.scene.add(bounce);
+    this.cabLight = new THREE.PointLight(l.colour, l.fixtureIntensity * 1.5, 9, 2);
+    this.cabLight.position.set(0, CAB.height - 0.45, CAB.centerZ);
+    this.cabLight.castShadow = true;
+    this.cabLight.shadow.mapSize.set(512, 512);
+    this.scene.add(this.cabLight);
 
-    const cabLight = new THREE.PointLight(PALETTE.lightWarm, 2.4, 7, 2);
-    cabLight.position.set(0, CAB.height - 0.45, CAB.centerZ);
-    this.scene.add(cabLight);
+    // A single ceiling source left the cab walls falling off to black. This
+    // fill sits near the panel and keeps the whole car readable.
+    this.panelFill = new THREE.PointLight(l.colour, l.fixtureIntensity * 1.6, 7, 2);
+    this.panelFill.position.set(-0.2, 1.55, CAB.centerZ + 0.5);
+    this.scene.add(this.panelFill);
 
-    const lobbyLight = new THREE.PointLight(0xffffff, 2.2, 13, 2);
-    lobbyLight.position.set(0, 3.1, 3.5);
-    this.scene.add(lobbyLight);
+    this.lobbyLight = new THREE.PointLight(0xffffff, l.fixtureIntensity * 1.2, 14, 2);
+    this.lobbyLight.position.set(0, 3.1, 3.5);
+    this.scene.add(this.lobbyLight);
+  }
+
+  // ─── Theme ───────────────────────────────────────────────────────────
+  getTheme() {
+    return this.theme.name;
+  }
+
+  /** Crossfades every themed value, so the switch dissolves rather than cuts. */
+  toggleTheme() {
+    const from = this.theme;
+    const to = from.name === 'light' ? DARK_THEME : LIGHT_THEME;
+    this.theme = to;
+    this.callbacks.onThemeChange(to.name);
+    this.sound.playClick();
+
+    this.activeCorridor?.switches.forEach((sw) => {
+      gsap.to(sw.rocker.rotation, { x: to.name === 'dark' ? 0.32 : -0.32, duration: 0.25, ease: 'power2.out' });
+      sw.lamp.visible = to.name === 'dark';
+    });
+
+    // Environment swaps at the midpoint, where it is least visible.
+    let swapped = false;
+    this.themeTween?.kill();
+    const state = { t: 0 };
+    this.themeTween = gsap.to(state, {
+      t: 1,
+      duration: 0.9,
+      ease: 'power2.inOut',
+      onUpdate: () => {
+        const v = lerpTheme(from, to, state.t);
+        applyThemeToMaterials(this.materials, v.surface, v.light.colour, v.light.panelEmissive);
+
+        this.hemi.color.setHex(v.light.hemiSky);
+        this.hemi.groundColor.setHex(v.light.hemiGround);
+        this.hemi.intensity = v.light.hemiIntensity;
+        this.ambient.intensity = v.light.ambient;
+        this.key.intensity = v.light.keyIntensity;
+        this.cabLight.color.setHex(v.light.colour);
+        this.cabLight.intensity = v.light.fixtureIntensity * 1.5;
+        this.panelFill.color.setHex(v.light.colour);
+        this.panelFill.intensity = v.light.fixtureIntensity * 1.6;
+        this.lobbyLight.intensity = v.light.fixtureIntensity * 1.2;
+        if (this.openDoor && this.activeCorridor) {
+          this.activeCorridor.roomSpill.intensity = v.light.fixtureIntensity * 0.72;
+        }
+        this.corridors.forEach((c) =>
+          c.bulbs.forEach((b) => {
+            if (!b.userData.keepColour) b.color.setHex(v.light.colour);
+            b.intensity = v.light.fixtureIntensity * ((b.userData.scale as number) ?? 1);
+          }),
+        );
+
+        (this.scene.fog as THREE.Fog).color.setHex(v.fog.colour);
+        (this.scene.fog as THREE.Fog).near = v.fog.near;
+        (this.scene.fog as THREE.Fog).far = v.fog.far;
+        (this.scene.background as THREE.Color).setHex(v.background);
+        this.renderer.toneMappingExposure = v.exposure;
+
+        if (!swapped && state.t > 0.5) {
+          swapped = true;
+          const env = this.envMaps[to.name];
+          if (env) {
+            this.scene.environment = env;
+            Object.values(this.materials).forEach((m) => {
+              const std = m as THREE.MeshStandardMaterial;
+              if ('envMap' in std && std.envMap) std.envMap = env;
+            });
+          }
+        }
+      },
+    });
   }
 
   // ─── Input ───────────────────────────────────────────────────────────
@@ -248,13 +348,21 @@ export class ElevatorApp {
     requestAnimationFrame(step);
   };
 
-  /** Everything the visitor can click, for the current phase. */
   private interactiveTargets(): THREE.Object3D[] {
     if (this.phase === 'panel') {
       return [...this.elevator.buttons.map((b) => b.hitMesh), this.elevator.telephone.hitMesh];
     }
     if (this.phase === 'corridor' && this.activeCorridor) {
-      return [...this.activeCorridor.doors.map((d) => d.hitMesh), this.activeCorridor.returnLiftHit];
+      const targets: THREE.Object3D[] = [
+        ...this.activeCorridor.doors.map((d) => d.hitMesh),
+        ...this.activeCorridor.switches.map((s) => s.hitMesh),
+      ];
+      // Only once the visitor is actually near it.
+      if (this.corridorProgress > 0.68) targets.push(this.activeCorridor.returnLiftHit);
+      return targets;
+    }
+    if (this.phase === 'room' && this.openDoor) {
+      return [this.openDoor.phoneHit];
     }
     return [];
   }
@@ -281,17 +389,15 @@ export class ElevatorApp {
     if (!hits.length) return;
     const data = hits[0].object.userData as { kind?: string; floorId?: FloorContent['id']; roomCode?: string };
 
-    if (data.kind === 'floorButton' && data.floorId) {
-      this.selectFloor(data.floorId);
-    } else if (data.kind === 'telephone') {
+    if (data.kind === 'floorButton' && data.floorId) this.selectFloor(data.floorId);
+    else if (data.kind === 'telephone') {
       this.sound.playClick();
       this.callbacks.onContactRequest();
-    } else if (data.kind === 'corridorDoor' && data.roomCode) {
+    } else if (data.kind === 'lightSwitch') this.toggleTheme();
+    else if (data.kind === 'corridorDoor' && data.roomCode) {
       const door = this.activeCorridor?.doors.find((d) => d.content.roomCode === data.roomCode);
       if (door) this.enterRoom(door);
-    } else if (data.kind === 'returnLift') {
-      this.returnToLobby();
-    }
+    } else if (data.kind === 'returnLift') this.returnToLobby();
   };
 
   private bindInput() {
@@ -335,12 +441,28 @@ export class ElevatorApp {
   setSoundEnabled(enabled: boolean) {
     this.sound.setEnabled(enabled);
   }
-
   isSoundEnabled() {
     return this.sound.isEnabled();
   }
 
-  /** Back control: leaves a room, or rides the lift back to the lobby. */
+  /**
+   * Deep link straight to a floor, skipping the lobby walk. Used by ?floor=
+   * so a corridor can be linked to directly.
+   */
+  visitFloor(floorId: string) {
+    if (this.phase !== 'lobby' && this.phase !== 'entering' && this.phase !== 'panel') return;
+    const floor = floors.find((f) => f.id === floorId);
+    if (!floor) return;
+    this.lobbyProgress = LOBBY_MAX;
+    this.lobbyTarget = LOBBY_MAX;
+    setDoorOpen(this.elevator.frontDoors, 0);
+    this.elevator.logoPlane.visible = false;
+    this.elevator.taglinePlane.visible = false;
+    this.rig.snapTo(new THREE.Vector3(-0.62, EYE_HEIGHT, CAB.centerZ), -Math.PI / 2, -0.1);
+    this.setPhase('panel');
+    this.selectFloor(floor.id);
+  }
+
   goBack() {
     if (this.inputLocked) return;
     if (this.phase === 'room') this.exitRoom();
@@ -381,12 +503,16 @@ export class ElevatorApp {
     });
 
     if (!this.corridors.has(floorId)) {
-      const built = buildCorridor(this.materials, floor);
-      // The corridor starts where the car's rear doors are.
+      const built = buildCorridor(this.materials, floor, this.theme);
       built.group.position.z = CAB.backZ;
-      built.group.visible = false;
+      // Visible from the moment it is built, but behind closed doors: the
+      // shaders compile during the ride instead of hitching on the reveal.
+      built.group.visible = true;
       this.scene.add(built.group);
       this.corridors.set(floorId, built);
+      built.switches.forEach((sw) => {
+        sw.rocker.rotation.x = this.theme.name === 'dark' ? 0.32 : -0.32;
+      });
     }
 
     this.setPhase('travelling');
@@ -394,15 +520,10 @@ export class ElevatorApp {
     const doorState = { front: 1, back: 0 };
     const tl = gsap.timeline({ onComplete: () => (this.inputLocked = false) });
 
-    // 1. Turn to face the doors we are about to leave through. This is the
-    //    "force the camera to face the door" beat — the visitor is looking
-    //    straight at the opening before it starts to move.
-    tl.call(() => {
-      this.rig.setTarget(new THREE.Vector3(0, EYE_HEIGHT, CAB.centerZ + 0.15), 0);
-    });
-    tl.to({}, { duration: 0.75 });
+    // Turn square onto the doors before they move.
+    tl.call(() => this.rig.setTarget(new THREE.Vector3(0, EYE_HEIGHT, CAB.centerZ + 0.1), 0, 0));
+    tl.to({}, { duration: 0.7 });
 
-    // 2. Front doors close, car sets off.
     tl.call(() => this.sound.playDoor());
     tl.to(doorState, {
       front: 0,
@@ -415,27 +536,32 @@ export class ElevatorApp {
       this.elevator.setFloorReadout(floor.floorNumber);
     });
 
-    // 3. Travel: a settle-in shake that eases off as the car arrives.
+    // A settle rather than a rattle: the old amplitude read as a fairground
+    // ride. This is just enough to register as motion.
     const travel = { shake: 0 };
     tl.to(travel, {
-      shake: 0.014,
-      duration: 0.5,
-      ease: 'power2.out',
+      shake: 0.0035,
+      duration: 0.8,
+      ease: 'sine.inOut',
       onUpdate: () => this.rig.setShake(travel.shake),
     });
     tl.to(travel, {
       shake: 0,
-      duration: 1.2,
-      ease: 'power2.in',
+      duration: 1.4,
+      ease: 'sine.inOut',
       onUpdate: () => this.rig.setShake(travel.shake),
     });
 
-    // 4. Arrive, reveal the corridor behind the rear doors, open them.
     tl.call(() => {
       const corridor = this.corridors.get(floorId)!;
       if (this.activeCorridor && this.activeCorridor !== corridor) this.activeCorridor.group.visible = false;
       this.activeCorridor = corridor;
       corridor.group.visible = true;
+      this.corridors.forEach((c) => {
+        if (c !== corridor) c.group.visible = false;
+      });
+      // Start the walk from inside the car, so the doors open on the corridor
+      // ahead and the visitor steps out under their own scroll.
       this.corridorProgress = 0;
       this.corridorTarget = 0;
       this.sound.playDing();
@@ -443,16 +569,14 @@ export class ElevatorApp {
     tl.call(() => this.sound.playDoor());
     tl.to(doorState, {
       back: 1,
-      duration: 1.3,
+      duration: 1.4,
       ease: 'power3.out',
       onUpdate: () => setDoorOpen(this.elevator.backDoors, doorState.back),
     });
-
-    // 5. Step out into the corridor as the doors finish opening.
     tl.call(() => {
       this.setPhase('corridor');
-      this.lastFootstepZ = CAB.backZ;
-    }, undefined, '-=0.6');
+      this.lastFootstepZ = CAB.centerZ;
+    }, undefined, '-=0.9');
   }
 
   private returnToLobby() {
@@ -465,8 +589,13 @@ export class ElevatorApp {
     tl.call(() => {
       if (this.openDoor) this.closeRoomDoor(this.openDoor);
       this.openDoor = null;
+      this.slideIndex = -1;
       this.callbacks.onDoorChange(null);
-      if (this.activeCorridor) this.activeCorridor.group.visible = false;
+      this.callbacks.onSlideChange(0, 0);
+      if (this.activeCorridor) {
+        this.activeCorridor.roomSpill.intensity = 0;
+        this.activeCorridor.group.visible = false;
+      }
       this.activeCorridor = null;
       this.selectedFloor = null;
       this.callbacks.onFloorChange(null);
@@ -477,10 +606,9 @@ export class ElevatorApp {
       });
       setDoorOpen(this.elevator.backDoors, 0);
       setDoorOpen(this.elevator.frontDoors, 1);
-      // Put the visitor back inside the car, facing the panel.
       this.lobbyProgress = LOBBY_MAX;
       this.lobbyTarget = LOBBY_MAX;
-      this.rig.snapTo(new THREE.Vector3(0, EYE_HEIGHT, CAB.centerZ), -Math.PI / 2);
+      this.rig.snapTo(new THREE.Vector3(-0.62, EYE_HEIGHT, CAB.centerZ), -Math.PI / 2, -0.1);
       this.setPhase('panel');
     });
     tl.call(() => this.sound.playDing());
@@ -488,27 +616,59 @@ export class ElevatorApp {
   }
 
   // ─── Rooms ───────────────────────────────────────────────────────────
+  private setSlide(door: CorridorDoor, index: number) {
+    const clamped = clamp(index, 0, door.content.slides.length - 1);
+    if (clamped === this.slideIndex) return;
+    this.slideIndex = clamped;
+    const material = door.projected.material;
+    material.map?.dispose();
+    material.map = createSlideTexture(
+      door.content.slides[clamped],
+      this.theme,
+      clamped,
+      door.content.slides.length,
+    );
+    material.needsUpdate = true;
+    this.callbacks.onSlideChange(clamped, door.content.slides.length);
+  }
+
   private enterRoom(door: CorridorDoor) {
     if (this.inputLocked) return;
     this.inputLocked = true;
     this.openDoor = door;
     door.isOpen = true;
+    this.roomProgress = 0;
+    this.roomTarget = 0;
+    this.slideIndex = -1;
     this.callbacks.onDoorChange(door.content);
     this.setPhase('room');
+
+    // One spill light serves every room; park it in this one.
+    const corridor = this.activeCorridor;
+    if (corridor) {
+      corridor.roomSpill.position.copy(door.spillPoint);
+      gsap.to(corridor.roomSpill, {
+        intensity: this.theme.light.fixtureIntensity * 0.72,
+        duration: 0.7,
+        ease: 'power2.out',
+      });
+    }
     this.sound.playCreak(door.side * 0.5);
+    this.setSlide(door, 0);
 
     const tl = gsap.timeline({ onComplete: () => (this.inputLocked = false) });
-    // The leaf swings inward, away from the visitor.
     tl.to(door.pivot.rotation, { y: -Math.PI * 0.62, duration: 0.9, ease: 'power2.out' });
-    // Walk in, and let the board settle dead centre. The door's stored pose
-    // is corridor-local, so it needs the corridor's own offset applying.
-    tl.call(() => {
-      this.rig.setTarget(
-        new THREE.Vector3(door.viewPosition.x, EYE_HEIGHT, door.viewPosition.z + CAB.backZ),
-        door.viewYaw,
-      );
-    }, undefined, 0.25);
-    tl.to({}, { duration: 1.2 });
+    tl.call(
+      () =>
+        this.rig.setTarget(
+          new THREE.Vector3(door.viewPosition.x, EYE_HEIGHT, door.viewPosition.z + CAB.backZ),
+          door.viewYaw,
+          0,
+        ),
+      undefined,
+      0.25,
+    );
+    tl.to({}, { duration: 1.3 });
   }
 
   private closeRoomDoor(door: CorridorDoor) {
@@ -516,13 +676,20 @@ export class ElevatorApp {
     door.isOpen = false;
   }
 
+  /** Deck finished (or backed out of): look to the door, then step out. */
   private exitRoom() {
     const door = this.openDoor;
     if (!door) return;
     this.inputLocked = true;
     this.openDoor = null;
     this.callbacks.onDoorChange(null);
-    this.sound.playCreak(door.side * 0.5);
+    this.callbacks.onSlideChange(0, 0);
+    if (this.activeCorridor) {
+      gsap.to(this.activeCorridor.roomSpill, { intensity: 0, duration: 0.6, ease: 'power2.in' });
+    }
+
+    const corridorZ = CAB.backZ + door.z;
+    const doorWorld = new THREE.Vector3(door.focusPoint.x, EYE_HEIGHT, corridorZ);
 
     const tl = gsap.timeline({
       onComplete: () => {
@@ -530,26 +697,35 @@ export class ElevatorApp {
         this.setPhase('corridor');
       },
     });
-    // Back into the corridor first, then swing the door shut behind us.
+
+    // Pan to the door first, then walk back through it into the corridor.
+    tl.call(() =>
+      this.rig.setTarget(
+        new THREE.Vector3(door.viewPosition.x, EYE_HEIGHT, door.viewPosition.z + CAB.backZ),
+        CameraRig.yawToward(door.viewPosition, doorWorld),
+        0,
+      ),
+    );
+    tl.to({}, { duration: 0.85 });
     tl.call(() => {
-      this.corridorTarget = this.progressForZ(door.z);
+      this.corridorTarget = this.progressForZ(corridorZ);
       this.corridorProgress = this.corridorTarget;
+      this.sound.playCreak(door.side * 0.5);
     });
     tl.to({}, { duration: 0.5 });
     tl.call(() => this.closeRoomDoor(door));
     tl.to({}, { duration: 0.6 });
   }
 
-  /** Inverse of the corridor camera curve: scroll progress that sits at z. */
   private progressForZ(z: number) {
     const corridor = this.activeCorridor;
     if (!corridor) return 0;
-    const startZ = CAB.backZ - 1.2;
+    const startZ = CAB.centerZ;
     const endZ = CAB.backZ + corridor.endZ + 3.2;
     return clamp((z - startZ) / (endZ - startZ), 0, 1);
   }
 
-  // ─── Per-frame camera ────────────────────────────────────────────────
+  // ─── Per-frame ───────────────────────────────────────────────────────
   private updateLobbyCamera(progress: number) {
     const doorT = smoothstep(clamp(progress, 0, 1));
     setDoorOpen(this.elevator.frontDoors, doorT);
@@ -560,23 +736,19 @@ export class ElevatorApp {
 
     if (progress < 1) {
       this.setPhase('lobby');
-      // Approach: drift toward the threshold, doors opening ahead.
-      this.rig.setTarget(new THREE.Vector3(0, EYE_HEIGHT, 6.2 - doorT * 2.6), 0);
+      this.rig.setTarget(new THREE.Vector3(0, EYE_HEIGHT, 6.2 - doorT * 2.6), 0, 0);
     } else if (progress < 2) {
       this.setPhase('entering');
       const t = smoothstep(progress - 1);
-      // Walk through the threshold to the middle of the car.
-      this.rig.setTarget(new THREE.Vector3(0, EYE_HEIGHT, 3.6 - t * (3.6 - CAB.centerZ)), 0);
+      this.rig.setTarget(new THREE.Vector3(0, EYE_HEIGHT, 3.6 - t * (3.6 - CAB.centerZ)), 0, 0);
       if (t > 0.35) this.sound.startMusic();
     } else {
       this.setPhase('panel');
       const t = smoothstep(progress - 2);
-      // Turn to face the panel wall square on and tip the head down a little,
-      // so the panel and the telephone beneath it both sit in frame.
       this.rig.setTarget(
-        new THREE.Vector3(-t * 0.3, EYE_HEIGHT, CAB.centerZ),
+        new THREE.Vector3(-t * 0.62, EYE_HEIGHT, CAB.centerZ),
         -t * (Math.PI / 2),
-        -t * 0.13,
+        -t * 0.1,
       );
       this.sound.startMusic();
     }
@@ -586,15 +758,13 @@ export class ElevatorApp {
     const corridor = this.activeCorridor;
     if (!corridor) return;
 
-    const startZ = CAB.backZ - 1.2;
+    // The walk now begins where the visitor is actually standing: inside the
+    // car. Scrolling carries them out through the open doors.
+    const startZ = CAB.centerZ;
     const endZ = CAB.backZ + corridor.endZ + 3.2;
     const z = startZ + (endZ - startZ) * smoothstep(progress);
     const position = new THREE.Vector3(0, EYE_HEIGHT, z);
 
-    // Look at whichever door we are closest to, so each one gets its own
-    // moment centre-frame; fall back to straight ahead between doors and at
-    // the very end, where the return lift is.
-    let yaw = 0;
     let nearest: CorridorDoor | null = null;
     let nearestDistance = Infinity;
     for (const door of corridor.doors) {
@@ -606,24 +776,27 @@ export class ElevatorApp {
       }
     }
 
+    let yaw = 0;
     if (nearest) {
-      const focus = nearest.focusPoint.clone().add(new THREE.Vector3(0, 0, CAB.backZ));
-      const doorYaw = CameraRig.yawToward(position, focus);
-      // Blend in over a ~2.4m window either side, so the head turns smoothly
-      // toward the door and releases again once it is behind us.
       let influence = 1 - smoothstep(clamp((nearestDistance - 0.4) / 2.4, 0, 1));
-      // Let go of the last door on the approach to the end, so the walk
-      // finishes square on the return lift rather than facing the wall.
       influence *= 1 - smoothstep(clamp((progress - 0.84) / 0.16, 0, 1));
-      yaw = doorYaw * influence;
+      // Hold the view straight ahead while still inside the car, so the
+      // corridor is revealed head-on through the opening doors.
+      influence *= smoothstep(clamp((z - (CAB.backZ - 0.4)) / -1.6, 0, 1));
+
+      // Ease across to the far side as the door comes up: standing on the
+      // centre line put the camera close enough that the frame overflowed.
+      position.x = -nearest.side * (CORRIDOR.halfWidth - 1.5) * influence;
+
+      const focus = nearest.focusPoint.clone().add(new THREE.Vector3(0, 0, CAB.backZ));
+      yaw = CameraRig.yawToward(position, focus) * influence;
     }
 
-    this.rig.setTarget(position, yaw);
+    this.rig.setTarget(position, yaw, 0);
 
-    // Footsteps keyed to distance walked, not to frame count.
-    if (Math.abs(z - this.lastFootstepZ) > 0.85) {
+    if (Math.abs(z - this.lastFootstepZ) > 0.9) {
       this.lastFootstepZ = z;
-      this.sound.playFootstep((Math.random() - 0.5) * 0.4);
+      this.sound.playFootstep((Math.random() - 0.5) * 0.35);
     }
   }
 
@@ -637,23 +810,33 @@ export class ElevatorApp {
 
     if (this.phase === 'lobby' || this.phase === 'entering' || this.phase === 'panel') {
       this.lobbyTarget = clamp(this.lobbyTarget + wheel, 0, LOBBY_MAX);
-      this.lobbyProgress += (this.lobbyTarget - this.lobbyProgress) * 0.12;
+      this.lobbyProgress = ease(this.lobbyProgress, this.lobbyTarget, 0.12, dt);
       this.updateLobbyCamera(this.lobbyProgress);
     } else if (this.phase === 'corridor') {
       this.corridorTarget = clamp(this.corridorTarget + wheel * 0.5, 0, 1);
-      this.corridorProgress += (this.corridorTarget - this.corridorProgress) * 0.1;
+      this.corridorProgress = ease(this.corridorProgress, this.corridorTarget, 0.1, dt);
       this.updateCorridorCamera(this.corridorProgress);
+    } else if (this.phase === 'room' && this.openDoor && !this.inputLocked) {
+      const door = this.openDoor;
+      const total = door.content.slides.length;
+      // One slide per notch of scroll; running off the end leaves the room.
+      this.roomTarget = clamp(this.roomTarget + wheel * 1.6, 0, total);
+      this.roomProgress = ease(this.roomProgress, this.roomTarget, 0.16, dt);
+      if (this.roomProgress >= total - 0.02 && this.roomTarget >= total) {
+        this.exitRoom();
+      } else {
+        this.setSlide(door, Math.floor(this.roomProgress));
+      }
     }
 
-    // Lit buttons breathe.
     const t = performance.now() * 0.001;
     this.elevator.buttons.forEach((b) => {
       if (!b.lit) return;
       const mat = b.dotMesh.material as THREE.MeshStandardMaterial;
-      mat.emissiveIntensity = 1.15 + Math.sin(t * 2.6) * 0.35;
+      mat.emissiveIntensity = 0.95 + Math.sin(t * 2.4) * 0.25;
     });
 
-    this.rig.update(dt, this.phase === 'room' ? 0.055 : 0.085);
+    this.rig.update(dt, this.phase === 'room' ? 0.055 : 0.08);
     this.composer.render();
   };
 
@@ -662,11 +845,13 @@ export class ElevatorApp {
     cancelAnimationFrame(this.frameId);
     this.resizeObserver.disconnect();
     this.unbindInput();
+    this.themeTween?.kill();
     gsap.killTweensOf('*');
     this.sound.dispose();
     disposeObject3D(this.scene);
     if (this.materials) disposeMaterials(this.materials);
-    this.scene.environment?.dispose();
+    Object.values(this.envMaps).forEach((t) => t?.dispose());
+    this.assets?.dispose();
     this.renderer.dispose();
     this.composer?.dispose();
     if (this.renderer.domElement.parentElement === this.container) {

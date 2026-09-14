@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowUpRight, Volume2, VolumeX, X } from 'lucide-react';
+import { ArrowUpRight, Moon, Sun, Volume2, VolumeX, X } from 'lucide-react';
 
 import { ElevatorApp, type Phase } from '@/three/ElevatorApp';
 import type { DoorContent, FloorContent } from '@/three/content';
+import type { ThemeName } from '@/three/theme';
 import { Seo } from '@/components/seo';
 import { siteConfig } from '@/content/site';
 
@@ -13,6 +14,7 @@ const SCROLL_HINT: Partial<Record<Phase, string>> = {
   entering: 'Keep scrolling',
   panel: 'Choose a floor',
   corridor: 'Scroll to walk the corridor',
+  room: 'Scroll through the deck',
 };
 
 export function ElevatorScene() {
@@ -25,6 +27,8 @@ export function ElevatorScene() {
   const [phase, setPhase] = useState<Phase>('lobby');
   const [floor, setFloor] = useState<FloorContent | null>(null);
   const [door, setDoor] = useState<DoorContent | null>(null);
+  const [slide, setSlide] = useState({ index: 0, total: 0 });
+  const [theme, setTheme] = useState<ThemeName>('light');
   const [fade, setFade] = useState(0);
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
@@ -44,7 +48,9 @@ export function ElevatorScene() {
       onPhaseChange: setPhase,
       onFloorChange: setFloor,
       onDoorChange: setDoor,
+      onSlideChange: (index, total) => setSlide({ index, total }),
       onFadeChange: setFade,
+      onThemeChange: setTheme,
       onContactRequest: openContact,
     });
     appRef.current = app;
@@ -60,6 +66,13 @@ export function ElevatorScene() {
     if (!ready) return;
     const timer = window.setTimeout(() => setFadedIn(true), 220);
     return () => window.clearTimeout(timer);
+  }, [ready]);
+
+  // ?floor=<id> links straight into a corridor, so a floor can be shared.
+  useEffect(() => {
+    if (!ready) return;
+    const target = new URLSearchParams(window.location.search).get('floor');
+    if (target) appRef.current?.visitFloor(target);
   }, [ready]);
 
   // Escape closes the form, so the 3D scene is never trapped behind it.
@@ -93,9 +106,10 @@ export function ElevatorScene() {
 
   const showBack = phase === 'corridor' || phase === 'room';
   const hint = SCROLL_HINT[phase];
+  const dark = theme === 'dark';
 
   return (
-    <div className="elevator-scene">
+    <div className="elevator-scene" data-scene-theme={theme}>
       <Seo path="/" description={siteConfig.description} />
 
       <div ref={containerRef} className="elevator-scene__canvas" aria-hidden={!ready} />
@@ -110,15 +124,26 @@ export function ElevatorScene() {
         <div className="elevator-scene__loading-text">Preparing the lift</div>
       </div>
 
-      <button
-        type="button"
-        className="elevator-scene__sound"
-        onClick={toggleSound}
-        aria-label={soundEnabled ? 'Mute sound' : 'Enable sound'}
-        aria-pressed={soundEnabled}
-      >
-        {soundEnabled ? <Volume2 size={17} /> : <VolumeX size={17} />}
-      </button>
+      <div className="elevator-scene__controls">
+        <button
+          type="button"
+          className="elevator-scene__control"
+          onClick={() => appRef.current?.toggleTheme()}
+          aria-label={dark ? 'Switch the lights on' : 'Switch the lights off'}
+          aria-pressed={dark}
+        >
+          {dark ? <Moon size={17} /> : <Sun size={17} />}
+        </button>
+        <button
+          type="button"
+          className="elevator-scene__control"
+          onClick={toggleSound}
+          aria-label={soundEnabled ? 'Mute sound' : 'Enable sound'}
+          aria-pressed={soundEnabled}
+        >
+          {soundEnabled ? <Volume2 size={17} /> : <VolumeX size={17} />}
+        </button>
+      </div>
 
       {showBack && (
         <button type="button" className="elevator-scene__back" onClick={() => appRef.current?.goBack()}>
@@ -126,10 +151,18 @@ export function ElevatorScene() {
         </button>
       )}
 
-      {floor && (phase === 'corridor' || phase === 'room') && (
+      {floor && phase === 'corridor' && (
         <div className="elevator-scene__floor-indicator">
           <span className="elevator-scene__floor-number">{floor.floorNumber}</span>
           <span className="elevator-scene__floor-label">{floor.buttonLabel}</span>
+        </div>
+      )}
+
+      {phase === 'room' && slide.total > 1 && (
+        <div className="elevator-scene__slides" aria-label={`Slide ${slide.index + 1} of ${slide.total}`}>
+          {Array.from({ length: slide.total }, (_, i) => (
+            <span key={i} className={`elevator-scene__slide-dot ${i <= slide.index ? 'is-seen' : ''}`} />
+          ))}
         </div>
       )}
 
@@ -141,7 +174,7 @@ export function ElevatorScene() {
         </div>
       )}
 
-      {fadedIn && hint && phase !== 'room' && (
+      {fadedIn && hint && (
         <div className="elevator-scene__hint">
           <span>{hint}</span>
           {phase !== 'panel' && <span className="elevator-scene__hint-arrow" />}
@@ -165,7 +198,7 @@ export function ElevatorScene() {
             >
               <X size={18} />
             </button>
-            <p className="elevator-dialog__kicker">Car telephone</p>
+            <p className="elevator-dialog__kicker">Lift telephone</p>
             <h2 className="elevator-dialog__title">Get in touch</h2>
             <p className="elevator-dialog__lede">
               Tell us what is happening now. We will come back with the next right move within one working day.

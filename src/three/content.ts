@@ -1,3 +1,4 @@
+import type { Slide } from './textures';
 import { caseStudies } from '@/content/portfolio';
 import { services } from '@/content/services';
 import { siteConfig } from '@/content/site';
@@ -8,14 +9,24 @@ import { positioning, principles, problem, together } from '@/content/journey';
 export type DoorContent = {
   label: string;
   roomCode: string;
-  /** Board on the room's facing wall. */
   kicker: string;
   title: string;
-  body: string;
-  bullets: string[];
+  /** Projected in sequence inside the room; scrolled through one at a time. */
+  slides: Slide[];
   /** Optional deep link out to the matching DOM page. */
   cta?: { label: string; to: string };
 };
+
+/** Splits a body and a bullet list into readable projector slides. */
+function toSlides(kicker: string, title: string, body: string, bullets: string[]): Slide[] {
+  const slides: Slide[] = [{ kicker, title, body }];
+  // Bullets land three to a slide: more than that and the projection gets
+  // dense enough that you stop reading it.
+  for (let i = 0; i < bullets.length; i += 3) {
+    slides.push({ kicker, title: i === 0 ? 'What it covers' : 'Continued', bullets: bullets.slice(i, i + 3) });
+  }
+  return slides;
+}
 
 export type FloorContent = {
   id: 'journey' | 'services' | 'clients' | 'contact';
@@ -36,8 +47,13 @@ const serviceDoor = (slug: string, label: string, roomCode: string): DoorContent
     roomCode,
     kicker: s.code,
     title: s.name,
-    body: `${s.emphasis} ${s.detail.intro}`,
-    bullets: s.deliverables.slice(0, 4).map((d) => d.title),
+    slides: [
+      { kicker: s.code, title: s.name, body: s.emphasis },
+      { kicker: s.code, title: 'The work', body: s.detail.intro },
+      ...toSlides(s.code, 'Deliverables', '', s.deliverables.map((d) => d.title)).slice(1),
+      { kicker: s.code, title: 'This is for you if', bullets: s.detail.forYouIf },
+      { kicker: s.code, title: '', statement: s.detail.outcome },
+    ],
     cta: { label: `Open ${label}`, to: `/services/${slug}` },
   };
 };
@@ -54,40 +70,35 @@ export const journeyFloor: FloorContent = {
       roomCode: '101',
       kicker: problem.number,
       title: problem.title,
-      body: `${problem.lede} ${problem.body}`,
-      bullets: problem.costs.map((c) => c.title),
+      slides: toSlides(problem.number, problem.title, `${problem.lede} ${problem.body}`, problem.costs.map((c) => c.title)),
     },
     {
       label: 'Positioning',
       roomCode: '102',
       kicker: positioning.number,
       title: positioning.title,
-      body: `${positioning.lede} ${positioning.body}`,
-      bullets: [positioning.stamp],
+      slides: toSlides(positioning.number, positioning.title, `${positioning.lede} ${positioning.body}`, [positioning.stamp]),
     },
     {
       label: 'How We Think',
       roomCode: '103',
       kicker: principles.number,
       title: principles.title,
-      body: 'Four principles decide what we build, what we cut, and what we report.',
-      bullets: principles.items.map((p) => p.title),
+      slides: toSlides(principles.number, principles.title, 'Four principles decide what we build, what we cut, and what we report.', principles.items.map((p) => p.title)),
     },
     {
       label: 'How We Work',
       roomCode: '104',
       kicker: method.number,
       title: method.title,
-      body: `${method.lede} ${method.body}`,
-      bullets: method.steps.map((s) => s.title),
+      slides: toSlides(method.number, method.title, `${method.lede} ${method.body}`, method.steps.map((s) => s.title)),
     },
     {
       label: 'Together',
       roomCode: '105',
       kicker: together.number,
       title: together.title,
-      body: `${together.lede} ${together.body}`,
-      bullets: together.steps.map((s) => s.title),
+      slides: toSlides(together.number, together.title, `${together.lede} ${together.body}`, together.steps.map((s) => s.title)),
     },
   ],
 };
@@ -117,8 +128,7 @@ export const clientsFloor: FloorContent = {
     roomCode: `30${i + 1}`,
     kicker: study.sector.replace('PLACEHOLDER — ', ''),
     title: study.title.replace('PLACEHOLDER — ', ''),
-    body: `${study.summary} ${study.result}`,
-    bullets: study.metrics.map((m) => `${m.value} ${m.label.replace('PLACEHOLDER — ', '')}`),
+    slides: toSlides(study.sector.replace('PLACEHOLDER — ', ''), study.title.replace('PLACEHOLDER — ', ''), `${study.summary} ${study.result}`, study.metrics.map((m) => `${m.value} ${m.label.replace('PLACEHOLDER — ', '')}`)),
     cta: { label: 'Read the case study', to: `/portfolio/${study.slug}` },
   })),
 };
@@ -135,8 +145,7 @@ export const contactFloor: FloorContent = {
       roomCode: '401',
       kicker: 'Get in touch',
       title: 'Ready when you are',
-      body: 'Tell us what is happening now and we will tell you what it takes. Bring the messy version, the half-built plan, the number that will not move.',
-      bullets: [siteConfig.email, siteConfig.address, 'Clear next steps within one working day'],
+      slides: toSlides('Get in touch', 'Ready when you are', 'Tell us what is happening now and we will tell you what it takes. Bring the messy version, the half-built plan, the number that will not move.', [siteConfig.email, siteConfig.address, 'Clear next steps within one working day']),
       cta: { label: 'Open the contact form', to: '/contact' },
     },
     {
@@ -144,8 +153,7 @@ export const contactFloor: FloorContent = {
       roomCode: '402',
       kicker: '05',
       title: 'Start where you are',
-      body: 'Four integrated products for different stages of growth, each handing over cleanly to the next.',
-      bullets: ['Growth Diagnostics', 'Growth Launchpad', 'Growth Accelerate', 'Growth Scale'],
+      slides: toSlides('05', 'Start where you are', 'Four integrated products for different stages of growth, each handing over cleanly to the next.', ['Growth Diagnostics', 'Growth Launchpad', 'Growth Accelerate', 'Growth Scale']),
       cta: { label: 'See the Growth Suite', to: '/bundles' },
     },
   ],

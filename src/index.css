@@ -574,7 +574,7 @@ body.elevator-locked { overflow: hidden; overscroll-behavior: none; }
 .elevator-scene__canvas { position: absolute; inset: 0; }
 .elevator-scene__canvas canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 
-.elevator-scene__fade { position: absolute; inset: 0; z-index: 6; background: #eef0f3; pointer-events: none; }
+.elevator-scene__fade { position: absolute; inset: 0; z-index: 6; pointer-events: none; }
 
 .elevator-scene__loading { position: absolute; inset: 0; z-index: 50; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--lynkrs-cream); transition: opacity .7s ease; }
 .elevator-scene__loading.is-hidden { opacity: 0; pointer-events: none; }
@@ -583,24 +583,51 @@ body.elevator-locked { overflow: hidden; overscroll-behavior: none; }
 .elevator-scene__loading-fill { height: 100%; width: 0; background: var(--brand); transition: width .3s ease; }
 .elevator-scene__loading-text { margin-top: 12px; font-size: 10px; letter-spacing: .28em; text-transform: uppercase; color: #6d7f96; }
 
-/* Overlays sit on frosted white so they stay legible against a bright scene. */
-.elevator-scene__sound,
-.elevator-scene__back { position: absolute; z-index: 20; display: inline-flex; align-items: center; justify-content: center; border: 1px solid rgba(24,50,83,.14); background: rgba(255,255,255,.82); color: var(--lynkrs-ink); backdrop-filter: blur(12px) saturate(1.2); box-shadow: 0 10px 26px -18px rgba(24,50,83,.7); transition: border-color .2s ease, background .2s ease; }
-.elevator-scene__sound { top: calc(20px + env(safe-area-inset-top)); right: calc(20px + env(safe-area-inset-right)); width: 44px; height: 44px; border-radius: 999px; }
-.elevator-scene__back { top: calc(20px + env(safe-area-inset-top)); left: calc(20px + env(safe-area-inset-left)); min-height: 44px; padding: 10px 18px; border-radius: 999px; font-size: 11px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; }
-.elevator-scene__sound:hover,
-.elevator-scene__back:hover { border-color: var(--brand); background: #fff; }
+/* Overlay chrome is driven by tokens so the corridor light switch flips the
+   DOM layer with the 3D scene, and everything stays readable in both modes. */
+.elevator-scene {
+  --ui-panel: rgba(255,255,255,.82);
+  --ui-panel-solid: #ffffff;
+  --ui-border: rgba(24,50,83,.14);
+  --ui-ink: var(--lynkrs-ink);
+  --ui-ink-soft: #5c7290;
+  --ui-shadow: 0 10px 26px -18px rgba(24,50,83,.7);
+  --ui-fade: #eef0f3;
+}
+.elevator-scene[data-scene-theme='dark'] {
+  --ui-panel: rgba(16,21,29,.72);
+  --ui-panel-solid: #151b25;
+  --ui-border: rgba(190,208,230,.2);
+  --ui-ink: #e7edf5;
+  --ui-ink-soft: #9fb0c4;
+  --ui-shadow: 0 10px 30px -16px rgba(0,0,0,.8);
+  --ui-fade: #0b0e13;
+}
+.elevator-scene__fade { background: var(--ui-fade); transition: background .9s ease; }
 
-.elevator-scene__floor-indicator { position: absolute; z-index: 15; top: calc(84px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); display: flex; align-items: baseline; gap: 12px; padding: 10px 20px; border-radius: 999px; border: 1px solid rgba(24,50,83,.12); background: rgba(255,255,255,.8); backdrop-filter: blur(12px); pointer-events: none; }
+.elevator-scene__controls { position: absolute; z-index: 20; top: calc(20px + env(safe-area-inset-top)); right: calc(20px + env(safe-area-inset-right)); display: flex; gap: 10px; }
+.elevator-scene__control,
+.elevator-scene__back { display: inline-flex; align-items: center; justify-content: center; border: 1px solid var(--ui-border); background: var(--ui-panel); color: var(--ui-ink); backdrop-filter: blur(12px) saturate(1.2); box-shadow: var(--ui-shadow); transition: border-color .2s ease, background .2s ease, color .2s ease; }
+.elevator-scene__control { width: 44px; height: 44px; border-radius: 999px; }
+.elevator-scene__back { position: absolute; z-index: 20; top: calc(20px + env(safe-area-inset-top)); left: calc(20px + env(safe-area-inset-left)); min-height: 44px; padding: 10px 18px; border-radius: 999px; font-size: 11px; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; }
+.elevator-scene__control:hover,
+.elevator-scene__back:hover { border-color: var(--brand); background: var(--ui-panel-solid); }
+
+.elevator-scene__floor-indicator { position: absolute; z-index: 15; top: calc(84px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); display: flex; align-items: baseline; gap: 12px; padding: 10px 20px; border-radius: 999px; border: 1px solid var(--ui-border); background: var(--ui-panel); backdrop-filter: blur(12px); pointer-events: none; }
 .elevator-scene__floor-number { font-size: 20px; font-weight: 600; color: var(--brand); letter-spacing: .04em; }
-.elevator-scene__floor-label { font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: #5c7290; }
+.elevator-scene__floor-label { font-size: 10px; letter-spacing: .22em; text-transform: uppercase; color: var(--ui-ink-soft); }
+
+/* Projector slide progress, so the deck reads as a deck. */
+.elevator-scene__slides { position: absolute; z-index: 15; top: calc(20px + env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); display: flex; gap: 7px; padding: 10px 16px; border-radius: 999px; border: 1px solid var(--ui-border); background: var(--ui-panel); backdrop-filter: blur(12px); pointer-events: none; }
+.elevator-scene__slide-dot { width: 22px; height: 3px; border-radius: 2px; background: var(--ui-border); transition: background .3s ease; }
+.elevator-scene__slide-dot.is-seen { background: var(--brand); }
 
 .elevator-scene__door-cta { position: absolute; z-index: 20; bottom: calc(40px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); }
 .elevator-scene__door-cta-link { display: inline-flex; align-items: center; gap: 10px; border: 1px solid transparent; border-radius: 999px; background: var(--brand); color: #fff; padding: 14px 26px; font-size: 12px; font-weight: 500; letter-spacing: .1em; text-transform: uppercase; text-decoration: none; box-shadow: 0 16px 34px -18px rgba(60,118,192,.9); transition: transform .2s ease, background .2s ease; }
 .elevator-scene__door-cta-link:hover { background: #2f63a6; transform: translateY(-2px); }
 
 .elevator-scene__hint { position: absolute; z-index: 15; bottom: calc(30px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none; }
-.elevator-scene__hint span:first-child { padding: 8px 16px; border-radius: 999px; background: rgba(255,255,255,.78); backdrop-filter: blur(10px); font-size: 10px; font-weight: 500; letter-spacing: .2em; text-transform: uppercase; color: #5c7290; }
+.elevator-scene__hint span:first-child { padding: 8px 16px; border-radius: 999px; border: 1px solid var(--ui-border); background: var(--ui-panel); backdrop-filter: blur(10px); font-size: 10px; font-weight: 500; letter-spacing: .2em; text-transform: uppercase; color: var(--ui-ink-soft); }
 .elevator-scene__hint-arrow { width: 16px; height: 16px; border-right: 1.5px solid var(--brand); border-bottom: 1.5px solid var(--brand); transform: rotate(45deg); animation: elevator-hint-bounce 1.6s ease-in-out infinite; }
 @keyframes elevator-hint-bounce { 0%, 100% { transform: rotate(45deg) translateY(0); opacity: 1; } 50% { transform: rotate(45deg) translateY(6px); opacity: .35; } }
 
@@ -628,6 +655,9 @@ body.elevator-locked { overflow: hidden; overscroll-behavior: none; }
 
 @media (max-width: 720px) {
   .elevator-scene__back { font-size: 10px; padding: 10px 14px; }
+  .elevator-scene__controls { gap: 8px; }
+  .elevator-scene__control { width: 42px; height: 42px; }
+  .elevator-scene__slide-dot { width: 16px; }
   .elevator-scene__floor-indicator { padding: 8px 16px; }
   .elevator-scene__door-cta { left: 20px; right: 20px; transform: none; }
   .elevator-scene__door-cta-link { justify-content: center; width: 100%; }
