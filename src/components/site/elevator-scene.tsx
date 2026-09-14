@@ -30,6 +30,11 @@ export function ElevatorScene() {
     const container = containerRef.current;
     if (!container) return;
 
+    // Belt-and-braces against iOS Safari rubber-banding the document behind
+    // the canvas: the input handlers already preventDefault, this just
+    // covers any touch that slips past them.
+    document.body.classList.add('elevator-locked');
+
     const app = new ElevatorApp(container, {
       onLoadingProgress: (pct) => setLoading(pct),
       onReady: () => setReady(true),
@@ -43,6 +48,7 @@ export function ElevatorScene() {
     return () => {
       app.dispose();
       appRef.current = null;
+      document.body.classList.remove('elevator-locked');
     };
   }, []);
 

@@ -3,6 +3,8 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
+import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js';
+import { FXAAShader } from 'three/examples/jsm/shaders/FXAAShader.js';
 import gsap from 'gsap';
 
 import { buildMaterials, disposeMaterials, type SceneMaterials } from './materials';
@@ -48,6 +50,7 @@ export class ElevatorApp {
   private renderer: THREE.WebGLRenderer;
   private composer!: EffectComposer;
   private bloomPass!: UnrealBloomPass;
+  private fxaaPass!: ShaderPass;
 
   private materials!: SceneMaterials;
   private elevator!: ElevatorBuild;
@@ -94,9 +97,12 @@ export class ElevatorApp {
     );
     this.camera.position.set(0, 1.6, 5);
 
-    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
+    // The renderer's own antialias flag does nothing once post-processing is
+    // in play — EffectComposer renders into a non-multisampled target — so
+    // real AA comes from the FXAA pass in setupComposer() instead.
+    this.renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false, powerPreference: 'high-performance' });
     this.renderer.setSize(container.clientWidth, container.clientHeight);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.isMobile ? 1.5 : 2));
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -115,10 +121,21 @@ export class ElevatorApp {
   private setupComposer() {
     const w = this.container.clientWidth;
     const h = this.container.clientHeight;
+    const pixelRatio = this.renderer.getPixelRatio();
+
     this.composer = new EffectComposer(this.renderer);
     this.composer.addPass(new RenderPass(this.scene, this.camera));
-    this.bloomPass = new UnrealBloomPass(new THREE.Vector2(w, h), 0.35, 0.4, 0.78);
+
+    // Bloom runs at a lower internal resolution on mobile — it stays a soft
+    // glow either way, so the extra samples on a phone GPU aren't worth it.
+    const bloomScale = this.isMobile ? 0.5 : 1;
+    this.bloomPass = new UnrealBloomPass(new THREE.Vector2(w * bloomScale, h * bloomScale), 0.35, 0.4, 0.78);
     this.composer.addPass(this.bloomPass);
+
+    this.fxaaPass = new ShaderPass(FXAAShader);
+    this.fxaaPass.material.uniforms['resolution'].value.set(1 / (w * pixelRatio), 1 / (h * pixelRatio));
+    this.composer.addPass(this.fxaaPass);
+
     this.composer.addPass(new OutputPass());
   }
 
@@ -169,7 +186,8 @@ export class ElevatorApp {
     const mainLight = new THREE.SpotLight(0xfff5e0, 6, 20, Math.PI / 4, 0.5, 1.5);
     mainLight.position.set(0, 4, 3);
     mainLight.castShadow = true;
-    mainLight.shadow.mapSize.set(1024, 1024);
+    const shadowSize = this.isMobile ? 512 : 1024;
+    mainLight.shadow.mapSize.set(shadowSize, shadowSize);
     this.scene.add(mainLight, mainLight.target);
 
     const fillLight = new THREE.PointLight(0xc8a85c, 1.2, 10);
@@ -293,6 +311,13 @@ export class ElevatorApp {
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(w, h);
     this.composer.setSize(w, h);
+
+    // EffectComposer.setSize resets every pass to the full resolution, so
+    // the mobile-scaled bloom target and the FXAA uniform need reapplying.
+    const bloomScale = this.isMobile ? 0.5 : 1;
+    this.bloomPass.setSize(w * bloomScale, h * bloomScale);
+    const pixelRatio = this.renderer.getPixelRatio();
+    this.fxaaPass.material.uniforms['resolution'].value.set(1 / (w * pixelRatio), 1 / (h * pixelRatio));
   }
 
   // ─── Public API for the React shell ─────────────────────────────────
