@@ -576,7 +576,7 @@ export class ElevatorApp {
       this.rig.setTarget(
         new THREE.Vector3(-t * 0.3, EYE_HEIGHT, CAB.centerZ),
         -t * (Math.PI / 2),
-        -t * 0.2,
+        -t * 0.13,
       );
       this.sound.startMusic();
     }

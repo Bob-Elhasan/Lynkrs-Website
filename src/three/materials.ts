@@ -39,7 +39,7 @@ export function buildMaterials(envMap: THREE.Texture) {
 
   /** Warm oak, used for corridor doors and cab trim. */
   const woodMat = new THREE.MeshStandardMaterial({
-    color: 0xc9a883,
+    color: 0xa08a6e,
     map: wood,
     metalness: 0,
     roughness: 0.52,
@@ -48,7 +48,7 @@ export function buildMaterials(envMap: THREE.Texture) {
   });
 
   const woodDark = new THREE.MeshStandardMaterial({
-    color: 0xd8c3a8,
+    color: 0xb09a82,
     map: wood,
     metalness: 0,
     roughness: 0.6,

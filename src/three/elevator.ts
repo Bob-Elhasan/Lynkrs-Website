@@ -232,10 +232,10 @@ export function buildElevator(materials: SceneMaterials, floors: FloorContent[])
 
     // Warm oak wainscot to break up the metal.
     const wainscot = new THREE.Mesh(
-      new THREE.BoxGeometry(0.02, 0.85, Math.abs(CAB.backZ)),
+      new THREE.BoxGeometry(0.02, 0.62, Math.abs(CAB.backZ)),
       materials.wood,
     );
-    wainscot.position.set(side * CAB.halfWidth, 0.5, CAB.backZ / 2);
+    wainscot.position.set(side * CAB.halfWidth, 0.35, CAB.backZ / 2);
     cab.add(wainscot);
 
     const railing = new THREE.Mesh(
@@ -291,7 +291,9 @@ export function buildElevator(materials: SceneMaterials, floors: FloorContent[])
   panelGroup.rotation.y = -Math.PI / 2;
   cab.add(panelGroup);
 
-  const panelPlate = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.72, 0.03), materials.steelDark);
+  // Navy plate: white labels need something dark behind them, and light
+  // steel-on-steel washed out completely.
+  const panelPlate = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.72, 0.03), materials.wallNavy);
   panelGroup.add(panelPlate);
 
   const panelSurround = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.78, 0.015), materials.brass);
@@ -334,7 +336,7 @@ export function buildElevator(materials: SceneMaterials, floors: FloorContent[])
 
     const lblTex = createLabelTexture(floor.buttonLabel, 420, 70, {
       fontSize: 34,
-      color: '#e8ecf2',
+      color: '#ffffff',
       align: 'left',
       weight: '500',
     });
@@ -358,7 +360,7 @@ export function buildElevator(materials: SceneMaterials, floors: FloorContent[])
 
   // ─── Telephone, directly below the panel ───
   const telephone = createTelephone(materials);
-  telephone.group.position.set(CAB.panelWallX, 0.98, CAB.centerZ);
+  telephone.group.position.set(CAB.panelWallX, 0.9, CAB.centerZ);
   telephone.group.rotation.y = -Math.PI / 2;
   cab.add(telephone.group);
 
