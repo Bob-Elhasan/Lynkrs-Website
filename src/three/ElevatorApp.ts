@@ -611,7 +611,10 @@ export class ElevatorApp {
       const doorYaw = CameraRig.yawToward(position, focus);
       // Blend in over a ~2.4m window either side, so the head turns smoothly
       // toward the door and releases again once it is behind us.
-      const influence = 1 - smoothstep(clamp((nearestDistance - 0.4) / 2.4, 0, 1));
+      let influence = 1 - smoothstep(clamp((nearestDistance - 0.4) / 2.4, 0, 1));
+      // Let go of the last door on the approach to the end, so the walk
+      // finishes square on the return lift rather than facing the wall.
+      influence *= 1 - smoothstep(clamp((progress - 0.84) / 0.16, 0, 1));
       yaw = doorYaw * influence;
     }
 

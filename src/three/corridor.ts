@@ -98,8 +98,10 @@ export function buildCorridor(materials: SceneMaterials, floor: FloorContent): C
     group.add(bulb);
   }
 
-  const sign = createWallSign(floor.signage, 1.7, 0.26);
-  sign.position.set(0, 2.2, -2.6);
+  // Set well down the corridor and kept small: mounted near the entrance it
+  // sat a metre from the camera on arrival and filled the whole frame.
+  const sign = createWallSign(floor.signage, 1.15, 0.17);
+  sign.position.set(0, 2.58, -6.2);
   group.add(sign);
 
   // ─── Doors and rooms ───
